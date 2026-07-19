@@ -5,6 +5,8 @@ import {
   getChampSelect,
   hoverChampion,
   lockChampion,
+  banHover,
+  banChampion,
   getRunePages,
   setRunePage,
   championIconUrl,
@@ -26,6 +28,8 @@ export function ChampSelectScreen() {
   const [completed, setCompleted] = useState(false);
   const [locking, setLocking] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isBanPhase, setIsBanPhase] = useState(false);
+  const [banned, setBanned] = useState(false);
 
   const [myTeam, setMyTeam] = useState<TeamMember[]>([]);
   const [theirTeam, setTheirTeam] = useState<TeamMember[]>([]);
@@ -58,6 +62,8 @@ export function ChampSelectScreen() {
         const st = await getChampSelect();
         if (!alive) return;
         setCompleted(Boolean(st.completed));
+        setIsBanPhase(Boolean(st.isBanPhase));
+        setBanned(Boolean(st.ban?.completed));
         if (st.championId) setSelected((prev) => prev ?? st.championId!);
         setMyTeam(st.myTeam ?? []);
         setTheirTeam(st.theirTeam ?? []);
@@ -85,7 +91,8 @@ export function ChampSelectScreen() {
   async function onPick(champ: Champion) {
     setSelected(champ.id);
     try {
-      await hoverChampion(champ.id);
+      if (isBanPhase) await banHover(champ.id);
+      else await hoverChampion(champ.id);
     } catch (err) {
       message.error((err as Error).message);
     }
@@ -97,6 +104,19 @@ export function ChampSelectScreen() {
     try {
       await lockChampion(selected);
       message.success("Campeão confirmado!");
+    } catch (err) {
+      message.error((err as Error).message);
+    } finally {
+      setLocking(false);
+    }
+  }
+
+  async function onBan() {
+    if (selected == null) return;
+    setLocking(true);
+    try {
+      await banChampion(selected);
+      message.success("Campeão banido!");
     } catch (err) {
       message.error((err as Error).message);
     } finally {
@@ -140,7 +160,9 @@ export function ChampSelectScreen() {
 
   return (
     <div className="cs">
-      <h1 className="headline">Seleção</h1>
+      <h1 className={`headline ${isBanPhase ? "ban" : ""}`}>
+        {isBanPhase ? "Banir campeão" : "Seleção"}
+      </h1>
 
       <div className="cs-teams">
         <TeamRow label="Seu time" members={myTeam} accent="ally" />
@@ -179,14 +201,25 @@ export function ChampSelectScreen() {
         ))}
       </div>
 
-      <button
-        className="accept cs-lock"
-        type="button"
-        onClick={onLock}
-        disabled={selected == null || completed || locking}
-      >
-        {completed ? "Confirmado" : locking ? "Confirmando…" : "Confirmar"}
-      </button>
+      {isBanPhase ? (
+        <button
+          className="accept cs-lock cs-ban"
+          type="button"
+          onClick={onBan}
+          disabled={selected == null || banned || locking}
+        >
+          {banned ? "Banido" : locking ? "Banindo…" : "Banir"}
+        </button>
+      ) : (
+        <button
+          className="accept cs-lock"
+          type="button"
+          onClick={onLock}
+          disabled={selected == null || completed || locking}
+        >
+          {completed ? "Confirmado" : locking ? "Confirmando…" : "Confirmar"}
+        </button>
+      )}
 
       {spells && spellList.length > 0 && (
         <div className="cs-spells">

@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import type { AxiosInstance } from "axios";
 import {
   findMyPickAction,
+  findMyBanAction,
   getSession,
   hoverChampion,
   lockChampion,
@@ -111,6 +112,44 @@ describe("summarizeChampSelect", () => {
       myTeam: [],
       theirTeam: [],
       mySpells: null,
+      ban: null,
+      isBanPhase: false,
     });
+  });
+
+  it("fora da fase de ban, isBanPhase é false", () => {
+    expect(summarizeChampSelect(fullSession).isBanPhase).toBe(false);
+  });
+});
+
+const banSession = {
+  localPlayerCellId: 0,
+  actions: [
+    [{ id: 20, actorCellId: 0, championId: 0, completed: false, type: "ban", isInProgress: true }],
+    [{ id: 0, actorCellId: 0, championId: 0, completed: false, type: "pick", isInProgress: false }],
+  ],
+  myTeam: [{ cellId: 0, championId: 0, championPickIntent: 0, assignedPosition: "top", spell1Id: 4, spell2Id: 6 }],
+  theirTeam: [],
+};
+
+describe("findMyBanAction", () => {
+  it("acha a ação de ban do meu cell", () => {
+    expect(findMyBanAction(banSession)).toEqual({
+      actionId: 20,
+      championId: 0,
+      completed: false,
+    });
+  });
+
+  it("retorna null quando não há ação de ban", () => {
+    expect(findMyBanAction(fullSession)).toBeNull();
+  });
+});
+
+describe("summarizeChampSelect — ban", () => {
+  it("marca isBanPhase quando a minha ação de ban está em progresso", () => {
+    const s = summarizeChampSelect(banSession);
+    expect(s.isBanPhase).toBe(true);
+    expect(s.ban).toEqual({ actionId: 20, championId: 0, completed: false });
   });
 });

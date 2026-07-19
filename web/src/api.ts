@@ -84,6 +84,8 @@ export interface PickState {
   myTeam?: TeamMember[];
   theirTeam?: TeamMember[];
   mySpells?: { spell1Id: number; spell2Id: number } | null;
+  ban?: { actionId: number; championId: number; completed: boolean } | null;
+  isBanPhase?: boolean;
 }
 
 export interface SummonerSpell {
@@ -125,6 +127,14 @@ export function hoverChampion(championId: number): Promise<void> {
 
 export function lockChampion(championId: number): Promise<void> {
   return postJson("/api/champ-select/lock", { championId });
+}
+
+export function banHover(championId: number): Promise<void> {
+  return postJson("/api/champ-select/ban-hover", { championId });
+}
+
+export function banChampion(championId: number): Promise<void> {
+  return postJson("/api/champ-select/ban", { championId });
 }
 
 export async function getRunePages(): Promise<RunePage[]> {

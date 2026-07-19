@@ -6,6 +6,7 @@ interface ChampSelectAction {
   championId: number;
   completed: boolean;
   type: string;
+  isInProgress?: boolean;
 }
 
 export interface PickInfo {
@@ -19,11 +20,11 @@ export interface Champion {
   name: string;
 }
 
-/**
- * Acha a sua ação de pick na sessão de seleção, pelo localPlayerCellId.
- * Retorna null se não houver sessão válida ou ação de pick sua.
- */
-export function findMyPickAction(session: unknown): PickInfo | null {
+/** Acha a minha ação (pick ou ban) na sessão, com o isInProgress. */
+function findMyActionByType(
+  session: unknown,
+  type: string
+): (PickInfo & { isInProgress: boolean }) | null {
   const s = session as {
     localPlayerCellId?: number;
     actions?: ChampSelectAction[][];
@@ -33,16 +34,29 @@ export function findMyPickAction(session: unknown): PickInfo | null {
   }
   for (const group of s.actions) {
     for (const action of group) {
-      if (action.actorCellId === s.localPlayerCellId && action.type === "pick") {
+      if (action.actorCellId === s.localPlayerCellId && action.type === type) {
         return {
           actionId: action.id,
           championId: action.championId,
           completed: action.completed,
+          isInProgress: action.isInProgress ?? false,
         };
       }
     }
   }
   return null;
+}
+
+/** Acha a sua ação de pick na sessão de seleção (pelo localPlayerCellId). */
+export function findMyPickAction(session: unknown): PickInfo | null {
+  const a = findMyActionByType(session, "pick");
+  return a ? { actionId: a.actionId, championId: a.championId, completed: a.completed } : null;
+}
+
+/** Acha a sua ação de ban na sessão de seleção (pelo localPlayerCellId). */
+export function findMyBanAction(session: unknown): PickInfo | null {
+  const a = findMyActionByType(session, "ban");
+  return a ? { actionId: a.actionId, championId: a.championId, completed: a.completed } : null;
 }
 
 export async function getSession(client: AxiosInstance): Promise<unknown> {
@@ -106,6 +120,8 @@ export interface ChampSelectSummary {
   myTeam: TeamMember[];
   theirTeam: TeamMember[];
   mySpells: MySpells | null;
+  ban: PickInfo | null;
+  isBanPhase: boolean;
 }
 
 interface RawMember {
@@ -154,6 +170,12 @@ export function summarizeChampSelect(session: unknown): ChampSelectSummary {
     ? { spell1Id: me.spell1Id, spell2Id: me.spell2Id }
     : null;
 
+  const banActive = findMyActionByType(session, "ban");
+  const ban: PickInfo | null = banActive
+    ? { actionId: banActive.actionId, championId: banActive.championId, completed: banActive.completed }
+    : null;
+  const isBanPhase = Boolean(banActive?.isInProgress && !banActive.completed);
+
   return {
     canPick: pick ? !pick.completed : false,
     actionId: pick?.actionId ?? 0,
@@ -162,5 +184,7 @@ export function summarizeChampSelect(session: unknown): ChampSelectSummary {
     myTeam,
     theirTeam,
     mySpells,
+    ban,
+    isBanPhase,
   };
 }

@@ -284,6 +284,15 @@
 .cs-lock {
   margin-top: 4px;
 }
+/* Botão de banir: vermelho em vez do dourado. */
+.accept.cs-ban {
+  color: #f7e9e9;
+  background: linear-gradient(180deg, #e8607a, #e84057 55%, #7a1f2b);
+  animation: none;
+}
+.headline.ban {
+  color: #e84057;
+}
 .cs-runes-label {
   margin: 0;
   font-size: 12px;
