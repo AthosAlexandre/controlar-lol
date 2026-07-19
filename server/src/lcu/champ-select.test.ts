@@ -48,11 +48,12 @@ describe("wrappers da LCU", () => {
     );
   });
 
-  it("lockChampion faz POST no complete da ação", async () => {
-    const client = { post: vi.fn().mockResolvedValue({ data: {} }) } as unknown as AxiosInstance;
-    await lockChampion(client, 11);
-    expect(client.post).toHaveBeenCalledWith(
-      "/lol-champ-select/v1/session/actions/11/complete"
+  it("lockChampion faz PATCH atômico (championId + completed:true)", async () => {
+    const client = { patch: vi.fn().mockResolvedValue({ data: {} }) } as unknown as AxiosInstance;
+    await lockChampion(client, 11, 64);
+    expect(client.patch).toHaveBeenCalledWith(
+      "/lol-champ-select/v1/session/actions/11",
+      { championId: 64, completed: true }
     );
   });
 

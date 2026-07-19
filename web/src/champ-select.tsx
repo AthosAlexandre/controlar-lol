@@ -72,10 +72,11 @@ export function ChampSelectScreen() {
   }
 
   async function onLock() {
+    if (selected == null) return;
     setLocking(true);
     try {
-      await lockChampion();
-      message.success("Campeão travado!");
+      await lockChampion(selected);
+      message.success("Campeão confirmado!");
     } catch (err) {
       message.error((err as Error).message);
     } finally {
@@ -143,7 +144,7 @@ export function ChampSelectScreen() {
         onClick={onLock}
         disabled={selected == null || completed || locking}
       >
-        {completed ? "Travado" : locking ? "Travando…" : "Travar"}
+        {completed ? "Confirmado" : locking ? "Confirmando…" : "Confirmar"}
       </button>
 
       <div className="divider" />

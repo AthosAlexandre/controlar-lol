@@ -109,8 +109,8 @@ export function hoverChampion(championId: number): Promise<void> {
   return postJson("/api/champ-select/hover", { championId });
 }
 
-export function lockChampion(): Promise<void> {
-  return postJson("/api/champ-select/lock");
+export function lockChampion(championId: number): Promise<void> {
+  return postJson("/api/champ-select/lock", { championId });
 }
 
 export async function getRunePages(): Promise<RunePage[]> {

@@ -10,6 +10,15 @@ import {
 
 export const champSelectRouter = Router();
 
+/** Extrai o motivo real de um erro da LCU (status + corpo), que o axios esconde. */
+function lcuError(err: unknown): string {
+  const e = err as { response?: { status?: number; data?: unknown }; message?: string };
+  if (e?.response) {
+    return `HTTP ${e.response.status} ${JSON.stringify(e.response.data)}`;
+  }
+  return e?.message ? String(e.message) : String(err);
+}
+
 /** Campeões que o jogador possui. */
 champSelectRouter.get("/champions", async (_req, res) => {
   const client = connectToLcu();
@@ -61,20 +70,25 @@ champSelectRouter.post("/champ-select/hover", async (req, res) => {
     await hoverChampion(client, pick.actionId, Number(req.body?.championId));
     res.json({ ok: true });
   } catch (err) {
-    res.status(502).json({ error: "Falha ao selecionar", detail: String(err) });
+    res.status(502).json({ error: "Falha ao selecionar", detail: lcuError(err) });
   }
 });
 
-/** Trava o campeão selecionado. */
-champSelectRouter.post("/champ-select/lock", async (_req, res) => {
+/** Confirma (trava) o campeão selecionado. */
+champSelectRouter.post("/champ-select/lock", async (req, res) => {
   const client = connectToLcu();
   if (!client) return res.status(503).json({ error: "LoL não está aberto" });
   try {
     const pick = findMyPickAction(await getSession(client));
     if (!pick) return res.status(409).json({ error: "Você não está escolhendo agora" });
-    await lockChampion(client, pick.actionId);
+    // Prioriza o campeão que o app mandou; se não veio, usa o que já está no hover.
+    const championId = Number(req.body?.championId) || pick.championId;
+    if (!championId) {
+      return res.status(409).json({ error: "Escolha um campeão antes de confirmar" });
+    }
+    await lockChampion(client, pick.actionId, championId);
     res.json({ ok: true });
   } catch (err) {
-    res.status(502).json({ error: "Ainda não é sua vez de escolher", detail: String(err) });
+    res.status(502).json({ error: "Não foi possível confirmar o campeão", detail: lcuError(err) });
   }
 });

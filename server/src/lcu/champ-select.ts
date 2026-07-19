@@ -61,12 +61,20 @@ export async function hoverChampion(
   });
 }
 
-/** Trava (lock in) o campeão selecionado na sua ação de pick. */
+/**
+ * Trava (lock in) o campeão na sua ação de pick, de forma atômica:
+ * um único PATCH que define o campeão E marca completed. Mais confiável que o
+ * POST .../complete, que só funciona se o campeão já tiver "colado" no servidor.
+ */
 export async function lockChampion(
   client: AxiosInstance,
-  actionId: number
+  actionId: number,
+  championId: number
 ): Promise<void> {
-  await client.post(`/lol-champ-select/v1/session/actions/${actionId}/complete`);
+  await client.patch(`/lol-champ-select/v1/session/actions/${actionId}`, {
+    championId,
+    completed: true,
+  });
 }
 
 export async function getOwnedChampions(
