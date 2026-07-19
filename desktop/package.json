@@ -1,0 +1,22 @@
+{
+  "name": "lol-modo-banheiro-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "main": "build/main.js",
+  "scripts": {
+    "build:ts": "tsc -p tsconfig.json",
+    "copy:renderer": "node -e \"const fs=require('fs');fs.mkdirSync('build/renderer',{recursive:true});fs.copyFileSync('src/renderer/index.html','build/renderer/index.html')\"",
+    "build": "npm run build:ts && npm run copy:renderer",
+    "start": "npm run build && electron .",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.6",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.5.0"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  }
+}
