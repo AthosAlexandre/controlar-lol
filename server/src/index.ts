@@ -1,26 +1,12 @@
-import express from "express";
-import cors from "cors";
+import path from "node:path";
+import { startServer } from "./server";
 import { readLockfile } from "./lcu/lockfile-reader";
-import { summonerRouter } from "./routes/summoner";
-import { actionsRouter } from "./routes/actions";
-import { eventsRouter } from "./routes/events";
-import { champSelectRouter } from "./routes/champ-select";
-import { runesRouter } from "./routes/runes";
-import { startGameflowWatcher } from "./lcu/events";
 
 const PORT = 3000;
+// Em dev, o web pode não estar buildado; se existir, é servido também.
+const webDist = path.resolve(__dirname, "../../web/dist");
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-app.use("/api", summonerRouter);
-app.use("/api", actionsRouter);
-app.use("/api", eventsRouter);
-app.use("/api", champSelectRouter);
-app.use("/api", runesRouter);
-
-// 0.0.0.0 permite acesso pelo celular na rede local (não só localhost).
-app.listen(PORT, "0.0.0.0", () => {
+startServer({ port: PORT, webDistPath: webDist }).then(() => {
   console.log(`Servidor rodando em http://0.0.0.0:${PORT}`);
   const lockfile = readLockfile();
   if (lockfile) {
@@ -30,6 +16,4 @@ app.listen(PORT, "0.0.0.0", () => {
   } else {
     console.log("LoL ainda não detectado (abra o cliente).");
   }
-  // Começa a ouvir os eventos de fase da LCU e a alimentar o game-state.
-  startGameflowWatcher();
 });
