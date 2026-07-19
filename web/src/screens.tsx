@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Switch } from "antd";
 import type { GameState } from "./api";
+import { ChampSelectScreen } from "./champ-select";
 
 interface BodyProps {
   state: GameState;
@@ -18,7 +19,7 @@ export function CardBody(p: BodyProps) {
     case "ReadyCheck":
       return <FoundBody accepting={p.accepting} onAccept={p.onAccept} />;
     case "ChampSelect":
-      return <SelectBody />;
+      return <ChampSelectScreen />;
     case "InProgress":
       return <InGameBody />;
     case "Offline":
@@ -82,15 +83,6 @@ function FoundBody({
       <button className="accept" type="button" onClick={onAccept} disabled={accepting}>
         {accepting ? "Aceitando…" : "Aceitar"}
       </button>
-    </>
-  );
-}
-
-function SelectBody() {
-  return (
-    <>
-      <h1 className="headline">Seleção</h1>
-      <p className="sub">Na seleção de campeões</p>
     </>
   );
 }
