@@ -1,21 +1,36 @@
 import { describe, it, expect, vi } from "vitest";
 import type { AxiosInstance } from "axios";
-import { getSummonerSpells, setSummonerSpells } from "./summoner-spells";
+import {
+  getSummonerSpells,
+  setSummonerSpells,
+  getSpellIconPath,
+} from "./summoner-spells";
+
+const SPELLS = [
+  { id: 4, name: "Flash", gameModes: ["CLASSIC", "ARAM"], iconPath: "/x/Summoner_flash.png" },
+  { id: 32, name: "Marcar", gameModes: ["ARAM"], iconPath: "/x/mark.png" },
+  { id: 0, name: "", gameModes: ["CLASSIC"], iconPath: "/x/none.png" },
+];
 
 describe("getSummonerSpells", () => {
   it("filtra os feitiços da Summoner's Rift (CLASSIC, id>0) e mapeia {id,name}", async () => {
     const client = {
-      get: vi.fn().mockResolvedValue({
-        data: [
-          { id: 4, name: "Flash", gameModes: ["CLASSIC", "ARAM"] },
-          { id: 32, name: "Marcar", gameModes: ["ARAM"] },
-          { id: 0, name: "", gameModes: ["CLASSIC"] },
-        ],
-      }),
+      get: vi.fn().mockResolvedValue({ data: SPELLS }),
     } as unknown as AxiosInstance;
 
     expect(await getSummonerSpells(client)).toEqual([{ id: 4, name: "Flash" }]);
-    expect(client.get).toHaveBeenCalledWith("/lol-game-data/v1/summoner-spells");
+    expect(client.get).toHaveBeenCalledWith("/lol-game-data/assets/v1/summoner-spells.json");
+  });
+});
+
+describe("getSpellIconPath", () => {
+  it("acha o iconPath do feitiço pelo id na lista", async () => {
+    const client = {
+      get: vi.fn().mockResolvedValue({ data: SPELLS }),
+    } as unknown as AxiosInstance;
+
+    expect(await getSpellIconPath(client, 4)).toBe("/x/Summoner_flash.png");
+    expect(await getSpellIconPath(client, 999)).toBeNull();
   });
 });
 
