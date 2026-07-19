@@ -57,13 +57,16 @@ npm run dev
 > **Firewall (Windows):** se o celular não abrir a página, libere as portas 5173 e 3000
 > para a rede privada (Windows Defender Firewall → Regras de Entrada → Nova Regra → Porta).
 
+> A partir da Sprint 3, a tela do celular muda sozinha conforme a fila/partida (via SSE);
+> não precisa atualizar a página.
+
 ## Roadmap (sprints)
 
-| Sprint | Entrega |
-|---|---|
-| 1 — A Ponte | Servidor detecta o LoL e lê credenciais |
-| 2 — Primeira Ação | Aceitar partida + auto-aceitar pelo celular |
-| 3 — Tempo Real | Tela do celular muda sozinha (WebSocket) |
-| 4 — Modo Banheiro | Escolher campeão + aplicar runas |
+| Sprint | Entrega | Status |
+|---|---|---|
+| 1 — A Ponte | Servidor detecta o LoL e lê credenciais | ✅ |
+| 2 — Primeira Ação | Aceitar partida + auto-aceitar pelo celular | ✅ |
+| 3 — Tempo Real | Tela do celular muda sozinha (WebSocket + SSE) | ✅ |
+| 4 — Modo Banheiro | Escolher campeão + aplicar runas | ⏳ |
 
 Design completo: [`docs/superpowers/specs/2026-07-19-lol-remote-controller-design.md`](docs/superpowers/specs/2026-07-19-lol-remote-controller-design.md)

@@ -190,3 +190,34 @@
     animation: none;
   }
 }
+
+/* Telas de fase (Em Fila / Seleção / Em Jogo / Offline / Encontrada). */
+.headline {
+  margin: 6px 0 0;
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 28px;
+  letter-spacing: 0.02em;
+  text-align: center;
+  color: var(--cream);
+}
+.headline.gold {
+  color: var(--gold);
+}
+.headline.muted {
+  color: var(--muted);
+}
+.sub {
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.timer {
+  margin-top: 8px;
+  font-family: var(--serif);
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+}
