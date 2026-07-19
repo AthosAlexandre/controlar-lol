@@ -8,8 +8,13 @@ import {
   getRunePages,
   setRunePage,
   championIconUrl,
+  getSummonerSpells,
+  setSpells,
+  spellIconUrl,
   type Champion,
   type RunePage,
+  type TeamMember,
+  type SummonerSpell,
 } from "./api";
 
 export function ChampSelectScreen() {
@@ -22,7 +27,13 @@ export function ChampSelectScreen() {
   const [locking, setLocking] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Carrega campeões + páginas de runas uma vez.
+  const [myTeam, setMyTeam] = useState<TeamMember[]>([]);
+  const [theirTeam, setTheirTeam] = useState<TeamMember[]>([]);
+  const [spells, setSpells2] = useState<{ spell1Id: number; spell2Id: number } | null>(null);
+  const [spellList, setSpellList] = useState<SummonerSpell[]>([]);
+  const [editingSlot, setEditingSlot] = useState<1 | 2 | null>(null);
+
+  // Carrega campeões, páginas de runas e feitiços uma vez.
   useEffect(() => {
     Promise.all([getChampions(), getRunePages()])
       .then(([c, p]) => {
@@ -33,7 +44,13 @@ export function ChampSelectScreen() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Poll leve do estado de pick (mantém o TRAVAR correto).
+  useEffect(() => {
+    getSummonerSpells()
+      .then(setSpellList)
+      .catch(() => {});
+  }, []);
+
+  // Poll leve do estado de pick + times + feitiços.
   useEffect(() => {
     let alive = true;
     async function poll() {
@@ -42,6 +59,9 @@ export function ChampSelectScreen() {
         if (!alive) return;
         setCompleted(Boolean(st.completed));
         if (st.championId) setSelected((prev) => prev ?? st.championId!);
+        setMyTeam(st.myTeam ?? []);
+        setTheirTeam(st.theirTeam ?? []);
+        setSpells2(st.mySpells ?? null);
       } catch {
         /* ignora */
       }
@@ -94,6 +114,22 @@ export function ChampSelectScreen() {
     }
   }
 
+  async function onPickSpell(spellId: number) {
+    if (!spells || editingSlot == null) return;
+    const next =
+      editingSlot === 1
+        ? { spell1Id: spellId, spell2Id: spells.spell2Id }
+        : { spell1Id: spells.spell1Id, spell2Id: spellId };
+    setSpells2(next); // otimista
+    setEditingSlot(null);
+    try {
+      await setSpells(next.spell1Id, next.spell2Id);
+      message.success("Feitiço trocado");
+    } catch (err) {
+      message.error((err as Error).message);
+    }
+  }
+
   if (loading) {
     return (
       <div className="cs-loading">
@@ -105,6 +141,11 @@ export function ChampSelectScreen() {
   return (
     <div className="cs">
       <h1 className="headline">Seleção</h1>
+
+      <div className="cs-teams">
+        <TeamRow label="Seu time" members={myTeam} accent="ally" />
+        <TeamRow label="Inimigo" members={theirTeam} accent="enemy" />
+      </div>
 
       <Input
         className="cs-search"
@@ -147,6 +188,37 @@ export function ChampSelectScreen() {
         {completed ? "Confirmado" : locking ? "Confirmando…" : "Confirmar"}
       </button>
 
+      {spells && spellList.length > 0 && (
+        <div className="cs-spells">
+          <p className="cs-runes-label">Feitiços</p>
+          <div className="cs-spell-slots">
+            <button type="button" className="cs-spell-slot" onClick={() => setEditingSlot(1)}>
+              <span className="cs-key">D</span>
+              <img className="cs-spell-icon" src={spellIconUrl(spells.spell1Id)} alt="" />
+            </button>
+            <button type="button" className="cs-spell-slot" onClick={() => setEditingSlot(2)}>
+              <span className="cs-key">F</span>
+              <img className="cs-spell-icon" src={spellIconUrl(spells.spell2Id)} alt="" />
+            </button>
+          </div>
+          {editingSlot && (
+            <div className="cs-spell-picker">
+              {spellList.map((sp) => (
+                <button
+                  key={sp.id}
+                  type="button"
+                  className="cs-spell-opt"
+                  title={sp.name}
+                  onClick={() => onPickSpell(sp.id)}
+                >
+                  <img src={spellIconUrl(sp.id)} alt={sp.name} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="divider" />
 
       <p className="cs-runes-label">Runas</p>
@@ -166,6 +238,44 @@ export function ChampSelectScreen() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+const POSITION_LABEL: Record<string, string> = {
+  top: "TOP",
+  jungle: "JG",
+  middle: "MID",
+  bottom: "ADC",
+  utility: "SUP",
+};
+
+function TeamRow({
+  label,
+  members,
+  accent,
+}: {
+  label: string;
+  members: TeamMember[];
+  accent: "ally" | "enemy";
+}) {
+  return (
+    <div className={`cs-team ${accent}`}>
+      <span className="cs-team-label">{label}</span>
+      <div className="cs-team-slots">
+        {members.map((m) => (
+          <div key={m.cellId} className="cs-slot" title={m.position}>
+            {m.championId > 0 ? (
+              <img className="cs-slot-icon" src={championIconUrl(m.championId)} alt="" />
+            ) : (
+              <div className="cs-slot-empty" />
+            )}
+            {m.position && (
+              <span className="cs-slot-pos">{POSITION_LABEL[m.position] ?? ""}</span>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

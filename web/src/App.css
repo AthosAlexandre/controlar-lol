@@ -309,3 +309,128 @@
   background: rgba(200, 170, 110, 0.14);
   color: var(--gold);
 }
+
+/* Times na Seleção. */
+.cs-teams {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cs-team {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.cs-team-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+.cs-team.ally .cs-team-label {
+  color: var(--teal);
+}
+.cs-team.enemy .cs-team-label {
+  color: #e84057;
+}
+.cs-team-slots {
+  display: flex;
+  gap: 6px;
+}
+.cs-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 44px;
+}
+.cs-slot-icon,
+.cs-slot-empty {
+  width: 44px;
+  height: 44px;
+  border-radius: 3px;
+}
+.cs-slot-icon {
+  object-fit: cover;
+  border: 1px solid;
+}
+.cs-team.ally .cs-slot-icon {
+  border-color: rgba(10, 200, 185, 0.7);
+}
+.cs-team.enemy .cs-slot-icon {
+  border-color: rgba(232, 64, 87, 0.7);
+}
+.cs-slot-empty {
+  border: 1px dashed rgba(160, 155, 140, 0.3);
+}
+.cs-slot-pos {
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+/* Feitiços D/F. */
+.cs-spells {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cs-spell-slots {
+  display: flex;
+  gap: 14px;
+}
+.cs-spell-slot {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  background: rgba(10, 20, 40, 0.5);
+  border: 1px solid var(--gold-dark);
+  cursor: pointer;
+  padding: 0;
+}
+.cs-spell-slot:hover {
+  border-color: var(--gold);
+}
+.cs-spell-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cs-key {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #05141c;
+  background: var(--gold);
+  border-radius: 3px;
+}
+.cs-spell-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--gold-dark);
+  background: rgba(1, 10, 19, 0.6);
+}
+.cs-spell-opt {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+}
+.cs-spell-opt img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 3px;
+}
+.cs-spell-opt:hover {
+  border-color: var(--gold);
+}
