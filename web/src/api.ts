@@ -1,5 +1,5 @@
-// O app foi carregado pelo IP/host do PC; o servidor é o mesmo host na porta 3000.
-const baseUrl = `http://${window.location.hostname}:3000`;
+// O app é servido pelo próprio servidor (porta 3000); use a mesma origem da página.
+const baseUrl = window.location.origin;
 
 export type Phase =
   | "Offline"

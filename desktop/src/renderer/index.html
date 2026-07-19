@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LoL Modo Banheiro</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; font-family: "Segoe UI", system-ui, sans-serif;
+        background: #0f1420; color: #e8ecf3; padding: 20px;
+        text-align: center;
+      }
+      h1 { font-size: 20px; margin: 4px 0 2px; }
+      .sub { color: #9aa4b2; font-size: 13px; margin-bottom: 18px; }
+      .status { font-size: 14px; margin-bottom: 16px; }
+      .status.on { color: #3fb950; }
+      .status.off { color: #d29922; }
+      button.toggle {
+        width: 100%; padding: 14px; font-size: 16px; font-weight: 600;
+        border: none; border-radius: 10px; cursor: pointer; color: #fff;
+        background: #2563eb;
+      }
+      button.toggle.ligado { background: #dc2626; }
+      .painel { margin-top: 18px; display: none; }
+      .painel.show { display: block; }
+      .url {
+        display: flex; gap: 8px; margin: 10px 0;
+      }
+      .url input {
+        flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #2a3040;
+        background: #161b26; color: #e8ecf3; font-size: 14px;
+      }
+      .url button {
+        padding: 10px 12px; border: none; border-radius: 8px; cursor: pointer;
+        background: #2a3040; color: #e8ecf3;
+      }
+      img.qr { width: 220px; height: 220px; border-radius: 10px; background: #fff; padding: 6px; }
+      .dica { color: #9aa4b2; font-size: 12px; margin-top: 12px; line-height: 1.5; }
+    </style>
+  </head>
+  <body>
+    <h1>🚽 LoL Modo Banheiro</h1>
+    <div class="sub">Controle o LoL pelo celular na mesma rede Wi-Fi</div>
+
+    <div id="status" class="status off">Verificando o LoL…</div>
+
+    <button id="toggle" class="toggle">Habilitar modo remoto</button>
+
+    <div id="painel" class="painel">
+      <div class="url">
+        <input id="link" readonly />
+        <button id="copiar">Copiar</button>
+      </div>
+      <img id="qr" class="qr" alt="QR code" />
+      <div class="dica">
+        No celular: abra a câmera e aponte no QR, ou digite o link no navegador.<br />
+        Precisa do LoL aberto e do celular no mesmo Wi-Fi.
+      </div>
+    </div>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>
