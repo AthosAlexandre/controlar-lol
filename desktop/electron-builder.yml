@@ -10,13 +10,12 @@ extraResources:
     to: server/dist/server.bundle.js
   - from: ../web/dist
     to: web/dist
-# Gera a pasta portátil (electron-builder --dir) sem assinar o exe — assim não
-# baixa o winCodeSign, que no Windows exige privilégio de symlink.
-# Para o instalador .exe (NSIS), ative o "Modo Desenvolvedor" do Windows
-# (Configurações → Privacidade e segurança → Para desenvolvedores) e troque
-# 'target' para 'nsis'. Veja docs/como-instalar-amigo.md.
+# Gera o instalador .exe (NSIS). App não assinado (signAndEditExecutable:false),
+# então o Windows mostra o aviso de "app desconhecido" na 1ª execução — normal.
+# Obs.: o winCodeSign do electron-builder falha ao extrair no Windows sem
+# privilégio de symlink; o build-all.ps1 pré-popula o cache dele antes de buildar.
 win:
-  target: zip
+  target: nsis
   signAndEditExecutable: false
 nsis:
   oneClick: false

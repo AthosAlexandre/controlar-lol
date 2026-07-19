@@ -10,7 +10,7 @@
     "copy:renderer": "node -e \"const fs=require('fs');fs.mkdirSync('build/renderer',{recursive:true});fs.copyFileSync('src/renderer/index.html','build/renderer/index.html')\"",
     "build": "npm run build:ts && npm run copy:renderer",
     "start": "npm run build && electron .",
-    "dist": "npm run build && electron-builder --dir"
+    "dist": "npm run build && electron-builder"
   },
   "devDependencies": {
     "@types/qrcode": "^1.5.6",

@@ -65,15 +65,15 @@ npm run dev
 Um app de desktop (Electron) com uma telinha: o amigo clica em **"Habilitar modo
 remoto"** e recebe um **link + QR code** para abrir no celular — sem terminal.
 
-Para gerar o pacote e distribuir:
+Para gerar o instalador e distribuir:
 
 ```powershell
-# na raiz do repo — gera desktop/release/LoL-Modo-Banheiro-portatil.zip
+# na raiz do repo — gera desktop/release/LoL Modo Banheiro Setup 0.1.0.exe
 pwsh -File build-all.ps1
 ```
 
-Mande o `.zip` pros amigos: eles extraem e abrem `LoL Modo Banheiro.exe`. Guia do
-amigo (e como gerar um instalador `.exe`): [`docs/como-instalar-amigo.md`](docs/como-instalar-amigo.md).
+Mande o `.exe` pros amigos: dois cliques para instalar. Guia do amigo:
+[`docs/como-instalar-amigo.md`](docs/como-instalar-amigo.md).
 
 Design: [`docs/superpowers/specs/2026-07-19-lol-modo-banheiro-desktop-design.md`](docs/superpowers/specs/2026-07-19-lol-modo-banheiro-desktop-design.md)
 
