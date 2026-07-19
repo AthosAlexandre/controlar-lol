@@ -45,6 +45,18 @@ npm run dev
 # Teste: curl http://localhost:3000/api/summoner
 ```
 
+Em outro terminal, subir o app do celular:
+```bash
+cd web
+npm install
+npm run dev
+# PC:      http://localhost:5173
+# Celular: http://IP-do-PC:5173  (mesmo Wi-Fi)
+```
+
+> **Firewall (Windows):** se o celular não abrir a página, libere as portas 5173 e 3000
+> para a rede privada (Windows Defender Firewall → Regras de Entrada → Nova Regra → Porta).
+
 ## Roadmap (sprints)
 
 | Sprint | Entrega |
