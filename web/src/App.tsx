@@ -1,41 +1,30 @@
 import { useEffect, useState } from "react";
-import { App as AntApp, Switch } from "antd";
+import { App as AntApp } from "antd";
 import {
-  getSummoner,
+  subscribeEvents,
   accept,
   getAutoAccept,
   setAutoAccept,
-  type Summoner,
+  type GameState,
 } from "./api";
+import { CardBody } from "./screens";
 import "./App.css";
+
+const OFFLINE: GameState = { phase: "Offline", summoner: null };
 
 export default function App() {
   const { message } = AntApp.useApp();
-  const [summoner, setSummoner] = useState<Summoner | null>(null);
-  const [online, setOnline] = useState(false);
+  const [state, setState] = useState<GameState>(OFFLINE);
+  const [connected, setConnected] = useState(false);
   const [auto, setAuto] = useState(false);
   const [accepting, setAccepting] = useState(false);
 
-  // Poll do status a cada 3s para refletir o LoL aberto/fechado.
+  // Assina o stream de estado; a tela passa a reagir sozinha.
   useEffect(() => {
-    let alive = true;
-    async function poll() {
-      try {
-        const s = await getSummoner();
-        if (alive) {
-          setSummoner(s);
-          setOnline(true);
-        }
-      } catch {
-        if (alive) setOnline(false);
-      }
-    }
-    poll();
-    const id = setInterval(poll, 3000);
-    return () => {
-      alive = false;
-      clearInterval(id);
-    };
+    return subscribeEvents((s) => {
+      setConnected(true);
+      setState(s);
+    });
   }, []);
 
   // Lê o estado do auto-aceitar ao montar.
@@ -67,6 +56,8 @@ export default function App() {
     }
   }
 
+  const online = connected && state.phase !== "Offline";
+
   return (
     <main className="stage">
       <p className="eyebrow">Modo Banheiro</p>
@@ -82,32 +73,13 @@ export default function App() {
           {online ? "Conectado" : "LoL fechado"}
         </div>
 
-        <h1 className="nick">
-          {summoner ? summoner.name : "—"}
-          {summoner && <span className="tag">#{summoner.tagLine}</span>}
-        </h1>
-        <p className="level">
-          {summoner ? `Nível ${summoner.level}` : "Abra o cliente do LoL"}
-        </p>
-
-        <button
-          className="accept"
-          type="button"
-          onClick={onAccept}
-          disabled={!online || accepting}
-        >
-          {accepting ? "Aceitando…" : "Aceitar"}
-        </button>
-
-        <div className="divider" />
-
-        <label className="auto">
-          <span className="auto-text">
-            <span className="auto-title">Auto-aceitar</span>
-            <span className="auto-sub">Aceita a partida sozinho</span>
-          </span>
-          <Switch checked={auto} onChange={onToggle} />
-        </label>
+        <CardBody
+          state={state}
+          auto={auto}
+          accepting={accepting}
+          onAccept={onAccept}
+          onToggle={onToggle}
+        />
       </section>
     </main>
   );
