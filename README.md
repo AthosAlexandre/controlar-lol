@@ -38,8 +38,11 @@ docs/     → documentação (como funciona, specs, sprints)
 
 ### Passos
 ```bash
-# (em breve) instalar dependências e subir o servidor
-# cd server && npm install && npm run dev
+cd server
+npm install
+npm run dev
+# Servidor em http://0.0.0.0:3000
+# Teste: curl http://localhost:3000/api/summoner
 ```
 
 ## Roadmap (sprints)
