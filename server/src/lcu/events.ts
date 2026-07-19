@@ -30,11 +30,16 @@ export function parsePhaseFromMessage(raw: string): string | null {
  * Abre o WebSocket da LCU e mantém o game-state atualizado com a fase do jogo.
  * Reconecta sozinho (relendo o lockfile) quando o LoL fecha ou o WS cai.
  */
-export function startGameflowWatcher(): void {
+export function startGameflowWatcher(): () => void {
+  let ws: WebSocket | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let stopped = false;
+
   function scheduleReconnect() {
+    if (stopped) return;
     gameState.setPhase("Offline");
     gameState.setSummoner(null);
-    setTimeout(connect, RECONNECT_MS);
+    timer = setTimeout(connect, RECONNECT_MS);
   }
 
   async function primeInitialState() {
@@ -56,20 +61,21 @@ export function startGameflowWatcher(): void {
   }
 
   function connect() {
+    if (stopped) return;
     const lockfile = readLockfile();
     if (!lockfile) {
       scheduleReconnect();
       return;
     }
     const creds = buildCredentials(lockfile);
-    const ws = new WebSocket(creds.baseUrl.replace("https", "wss"), {
+    ws = new WebSocket(creds.baseUrl.replace("https", "wss"), {
       agent: new Agent({ rejectUnauthorized: false }),
       headers: { Authorization: creds.authHeader },
     });
 
     ws.on("open", () => {
       // Assina só o evento de mudança de fase (não o firehose inteiro).
-      ws.send(JSON.stringify([5, GAMEFLOW_EVENT]));
+      ws?.send(JSON.stringify([5, GAMEFLOW_EVENT]));
       void primeInitialState();
     });
     ws.on("message", (raw: WebSocket.RawData) => {
@@ -77,8 +83,15 @@ export function startGameflowWatcher(): void {
       if (phase) gameState.setPhase(normalizePhase(phase));
     });
     ws.on("close", scheduleReconnect);
-    ws.on("error", () => ws.close()); // 'close' agenda a reconexão
+    ws.on("error", () => ws?.close()); // 'close' agenda a reconexão
   }
 
   connect();
+
+  // Para as reconexões e fecha o WebSocket (usado pelo stopServer).
+  return () => {
+    stopped = true;
+    if (timer) clearTimeout(timer);
+    if (ws) ws.close();
+  };
 }
