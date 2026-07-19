@@ -22,9 +22,11 @@ describe("getRunePages", () => {
 });
 
 describe("setCurrentRunePage", () => {
-  it("faz PUT na currentpage com o id", async () => {
+  it("faz PUT na currentpage com o id e header JSON (axios recusa número puro)", async () => {
     const client = { put: vi.fn().mockResolvedValue({ data: {} }) } as unknown as AxiosInstance;
     await setCurrentRunePage(client, 2);
-    expect(client.put).toHaveBeenCalledWith("/lol-perks/v1/currentpage", 2);
+    expect(client.put).toHaveBeenCalledWith("/lol-perks/v1/currentpage", 2, {
+      headers: { "Content-Type": "application/json" },
+    });
   });
 });
