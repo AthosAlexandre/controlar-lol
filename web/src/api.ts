@@ -70,11 +70,25 @@ export interface RunePage {
   current: boolean;
 }
 
+export interface TeamMember {
+  cellId: number;
+  championId: number;
+  position: string;
+}
+
 export interface PickState {
   actionId?: number;
   championId?: number;
   completed?: boolean;
   canPick: boolean;
+  myTeam?: TeamMember[];
+  theirTeam?: TeamMember[];
+  mySpells?: { spell1Id: number; spell2Id: number } | null;
+}
+
+export interface SummonerSpell {
+  id: number;
+  name: string;
 }
 
 /** URL do ícone do campeão (proxy no servidor). */
@@ -121,4 +135,19 @@ export async function getRunePages(): Promise<RunePage[]> {
 
 export function setRunePage(id: number): Promise<void> {
   return postJson("/api/rune-pages/current", { id });
+}
+
+/** URL do ícone do feitiço (proxy no servidor). */
+export function spellIconUrl(id: number): string {
+  return `${baseUrl}/api/spell-icon/${id}`;
+}
+
+export async function getSummonerSpells(): Promise<SummonerSpell[]> {
+  const res = await fetch(`${baseUrl}/api/summoner-spells`);
+  if (!res.ok) throw new Error(String(res.status));
+  return res.json();
+}
+
+export function setSpells(spell1Id: number, spell2Id: number): Promise<void> {
+  return postJson("/api/champ-select/spells", { spell1Id, spell2Id });
 }

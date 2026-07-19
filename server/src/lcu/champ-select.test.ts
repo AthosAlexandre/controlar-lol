@@ -6,6 +6,7 @@ import {
   hoverChampion,
   lockChampion,
   getOwnedChampions,
+  summarizeChampSelect,
 } from "./champ-select";
 
 const session = {
@@ -65,5 +66,51 @@ describe("wrappers da LCU", () => {
     } as unknown as AxiosInstance;
     expect(await getOwnedChampions(client)).toEqual([{ id: 64, name: "Lee Sin" }]);
     expect(client.get).toHaveBeenCalledWith("/lol-champions/v1/owned-champions-minimal");
+  });
+});
+
+const fullSession = {
+  localPlayerCellId: 0,
+  actions: [
+    [{ id: 0, actorCellId: 0, championId: 0, completed: false, type: "pick" }],
+  ],
+  myTeam: [
+    { cellId: 0, championId: 0, championPickIntent: 64, assignedPosition: "top", spell1Id: 4, spell2Id: 6 },
+    { cellId: 1, championId: 103, championPickIntent: 0, assignedPosition: "jungle", spell1Id: 4, spell2Id: 11 },
+  ],
+  theirTeam: [
+    { cellId: 5, championId: 157, championPickIntent: 99, assignedPosition: "middle" },
+    { cellId: 6, championId: 0, championPickIntent: 0, assignedPosition: "" },
+  ],
+};
+
+describe("summarizeChampSelect", () => {
+  it("usa o hover (pickIntent) no meu time e só o champ visível no inimigo", () => {
+    const s = summarizeChampSelect(fullSession);
+    expect(s.myTeam[0]).toEqual({ cellId: 0, championId: 64, position: "top" });
+    expect(s.myTeam[1]).toEqual({ cellId: 1, championId: 103, position: "jungle" });
+    // inimigo: NÃO usa pickIntent (Riot esconde o hover)
+    expect(s.theirTeam[0]).toEqual({ cellId: 5, championId: 157, position: "middle" });
+    expect(s.theirTeam[1]).toEqual({ cellId: 6, championId: 0, position: "" });
+  });
+
+  it("pega meus feitiços pelo localPlayerCellId e mantém o estado de pick", () => {
+    const s = summarizeChampSelect(fullSession);
+    expect(s.mySpells).toEqual({ spell1Id: 4, spell2Id: 6 });
+    expect(s.canPick).toBe(true);
+    expect(s.actionId).toBe(0);
+  });
+
+  it("sessão vazia → times vazios, sem feitiços, canPick false", () => {
+    const s = summarizeChampSelect(null);
+    expect(s).toEqual({
+      canPick: false,
+      actionId: 0,
+      championId: 0,
+      completed: false,
+      myTeam: [],
+      theirTeam: [],
+      mySpells: null,
+    });
   });
 });

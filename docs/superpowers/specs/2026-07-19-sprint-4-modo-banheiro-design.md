@@ -1,7 +1,7 @@
 # Sprint 4 — Modo Banheiro — Design
 
 **Data:** 2026-07-19
-**Autor:** tech@multidrop.com (com Claude Code)
+**Autor:** athos-iury (com Claude Code)
 **Status:** Aprovado — pronto para plano de implementação
 
 ## Objetivo

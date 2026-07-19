@@ -86,3 +86,81 @@ export async function getOwnedChampions(
     name: c.name,
   }));
 }
+
+export interface TeamMember {
+  cellId: number;
+  championId: number;
+  position: string;
+}
+
+export interface MySpells {
+  spell1Id: number;
+  spell2Id: number;
+}
+
+export interface ChampSelectSummary {
+  canPick: boolean;
+  actionId: number;
+  championId: number;
+  completed: boolean;
+  myTeam: TeamMember[];
+  theirTeam: TeamMember[];
+  mySpells: MySpells | null;
+}
+
+interface RawMember {
+  cellId: number;
+  championId: number;
+  championPickIntent: number;
+  assignedPosition: string;
+  spell1Id: number;
+  spell2Id: number;
+}
+
+/**
+ * Resume a sessão de seleção para o app: estado do pick + os dois times + os
+ * meus feitiços. No meu time mostra o hover (championPickIntent); no inimigo,
+ * só o campeão visível (a Riot esconde o hover deles no draft).
+ */
+export function summarizeChampSelect(session: unknown): ChampSelectSummary {
+  const pick = findMyPickAction(session);
+  const s = session as {
+    localPlayerCellId?: number;
+    myTeam?: RawMember[];
+    theirTeam?: RawMember[];
+  };
+  const localCell = typeof s?.localPlayerCellId === "number" ? s.localPlayerCellId : -1;
+
+  const myTeam: TeamMember[] = Array.isArray(s?.myTeam)
+    ? s.myTeam.map((m) => ({
+        cellId: m.cellId,
+        championId: m.championId || m.championPickIntent || 0,
+        position: m.assignedPosition || "",
+      }))
+    : [];
+
+  const theirTeam: TeamMember[] = Array.isArray(s?.theirTeam)
+    ? s.theirTeam.map((m) => ({
+        cellId: m.cellId,
+        championId: m.championId || 0,
+        position: m.assignedPosition || "",
+      }))
+    : [];
+
+  const me = Array.isArray(s?.myTeam)
+    ? s.myTeam.find((m) => m.cellId === localCell)
+    : undefined;
+  const mySpells: MySpells | null = me
+    ? { spell1Id: me.spell1Id, spell2Id: me.spell2Id }
+    : null;
+
+  return {
+    canPick: pick ? !pick.completed : false,
+    actionId: pick?.actionId ?? 0,
+    championId: pick?.championId ?? 0,
+    completed: pick?.completed ?? false,
+    myTeam,
+    theirTeam,
+    mySpells,
+  };
+}
