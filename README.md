@@ -67,6 +67,9 @@ npm run dev
 | 1 — A Ponte | Servidor detecta o LoL e lê credenciais | ✅ |
 | 2 — Primeira Ação | Aceitar partida + auto-aceitar pelo celular | ✅ |
 | 3 — Tempo Real | Tela do celular muda sozinha (WebSocket + SSE) | ✅ |
-| 4 — Modo Banheiro | Escolher campeão + aplicar runas | ⏳ |
+| 4 — Modo Banheiro | Escolher campeão + aplicar runas | ✅ |
+
+**MVP completo:** as 4 sprints estão prontas — do celular dá para acompanhar a fila,
+aceitar a partida, escolher o campeão e aplicar runas, tudo na rede local.
 
 Design completo: [`docs/superpowers/specs/2026-07-19-lol-remote-controller-design.md`](docs/superpowers/specs/2026-07-19-lol-remote-controller-design.md)
