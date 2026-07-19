@@ -1,0 +1,24 @@
+appId: com.multidrop.lolmodobanheiro
+productName: LoL Modo Banheiro
+directories:
+  output: release
+files:
+  - build/**/*
+  - package.json
+extraResources:
+  - from: ../server/dist/server.bundle.js
+    to: server/dist/server.bundle.js
+  - from: ../web/dist
+    to: web/dist
+# Gera a pasta portátil (electron-builder --dir) sem assinar o exe — assim não
+# baixa o winCodeSign, que no Windows exige privilégio de symlink.
+# Para o instalador .exe (NSIS), ative o "Modo Desenvolvedor" do Windows
+# (Configurações → Privacidade e segurança → Para desenvolvedores) e troque
+# 'target' para 'nsis'. Veja docs/como-instalar-amigo.md.
+win:
+  target: zip
+  signAndEditExecutable: false
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: LoL Modo Banheiro
