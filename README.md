@@ -75,6 +75,9 @@ pwsh -File build-all.ps1
 Mande o `.exe` pros amigos: dois cliques para instalar. Guia do amigo:
 [`docs/como-instalar-amigo.md`](docs/como-instalar-amigo.md).
 
+Como buildar, criar e **atualizar** o instalador (com passo a passo e
+troubleshooting): [`docs/como-buildar.md`](docs/como-buildar.md).
+
 Design: [`docs/superpowers/specs/2026-07-19-lol-modo-banheiro-desktop-design.md`](docs/superpowers/specs/2026-07-19-lol-modo-banheiro-desktop-design.md)
 
 ## Roadmap (sprints)

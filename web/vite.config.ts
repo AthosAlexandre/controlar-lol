@@ -7,6 +7,11 @@ import react from "@vitejs/plugin-react";
 // No app empacotado tudo já vem da 3000, então o proxy não é usado.
 export default defineConfig({
   plugins: [react()],
+  // O bundle passa de 500 kB por causa do antd (normal p/ app de LAN); subimos o
+  // limite do aviso para o vite não escrever no stderr e abortar o build-all.ps1.
+  build: {
+    chunkSizeWarningLimit: 2000,
+  },
   server: {
     host: true,
     port: 5173,
