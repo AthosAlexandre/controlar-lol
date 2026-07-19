@@ -1,11 +1,13 @@
-declare global {
-  interface Window {
-    banheiro: {
-      enable(): Promise<{ url: string; qr: string }>;
-      disable(): Promise<void>;
-      lolStatus(): Promise<boolean>;
-    };
-  }
+// IMPORTANTE: este arquivo roda no navegador do Electron (sem Node), então NÃO
+// pode virar um módulo CommonJS. Sem `import`/`export`, o tsc emite um script
+// puro (sem o wrapper `exports.__esModule` que quebraria com "exports is not
+// defined"). A tipagem de `window.banheiro` é feita por merge global do Window.
+interface Window {
+  banheiro: {
+    enable(): Promise<{ url: string; qr: string }>;
+    disable(): Promise<void>;
+    lolStatus(): Promise<boolean>;
+  };
 }
 
 const toggle = document.getElementById("toggle") as HTMLButtonElement;
@@ -56,5 +58,3 @@ copiarBtn.addEventListener("click", async () => {
 
 void atualizarStatus();
 setInterval(() => void atualizarStatus(), 4000);
-
-export {};
