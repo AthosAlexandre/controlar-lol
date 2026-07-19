@@ -221,3 +221,91 @@
   letter-spacing: 0.08em;
   color: var(--gold);
 }
+
+/* Tela de Seleção (Sprint 4). */
+.cs {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+.cs-loading {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}
+.cs-search {
+  width: 100%;
+}
+.cs-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  max-height: 42vh;
+  overflow-y: auto;
+  padding: 2px;
+}
+.cs-champ {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 2px;
+  background: rgba(10, 20, 40, 0.5);
+  border: 1px solid transparent;
+  cursor: pointer;
+  color: var(--muted);
+}
+.cs-champ.sel {
+  border-color: var(--gold);
+  color: var(--cream);
+  box-shadow: 0 0 12px -2px rgba(200, 170, 110, 0.6);
+}
+.cs-champ:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.cs-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 3px;
+}
+.cs-name {
+  font-size: 10px;
+  line-height: 1.1;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.cs-lock {
+  margin-top: 4px;
+}
+.cs-runes-label {
+  margin: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--gold);
+}
+.cs-runes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cs-page {
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid var(--gold-dark);
+  color: var(--cream);
+  cursor: pointer;
+  font-size: 13px;
+}
+.cs-page.cur {
+  border-color: var(--gold);
+  background: rgba(200, 170, 110, 0.14);
+  color: var(--gold);
+}

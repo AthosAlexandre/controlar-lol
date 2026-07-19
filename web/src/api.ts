@@ -58,3 +58,67 @@ export async function setAutoAccept(enabled: boolean): Promise<boolean> {
   const body = await res.json();
   return Boolean(body.enabled);
 }
+
+export interface Champion {
+  id: number;
+  name: string;
+}
+
+export interface RunePage {
+  id: number;
+  name: string;
+  current: boolean;
+}
+
+export interface PickState {
+  actionId?: number;
+  championId?: number;
+  completed?: boolean;
+  canPick: boolean;
+}
+
+/** URL do ícone do campeão (proxy no servidor). */
+export function championIconUrl(id: number): string {
+  return `${baseUrl}/api/champion-icon/${id}`;
+}
+
+export async function getChampions(): Promise<Champion[]> {
+  const res = await fetch(`${baseUrl}/api/champions`);
+  if (!res.ok) throw new Error(String(res.status));
+  return res.json();
+}
+
+export async function getChampSelect(): Promise<PickState> {
+  const res = await fetch(`${baseUrl}/api/champ-select`);
+  return res.json();
+}
+
+async function postJson(path: string, body?: unknown): Promise<void> {
+  const res = await fetch(`${baseUrl}${path}`, {
+    method: "POST",
+    headers: body ? { "Content-Type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    const b = await res.json().catch(() => ({}));
+    throw new Error(b.error || `Erro ${res.status}`);
+  }
+}
+
+export function hoverChampion(championId: number): Promise<void> {
+  return postJson("/api/champ-select/hover", { championId });
+}
+
+export function lockChampion(): Promise<void> {
+  return postJson("/api/champ-select/lock");
+}
+
+export async function getRunePages(): Promise<RunePage[]> {
+  const res = await fetch(`${baseUrl}/api/rune-pages`);
+  if (!res.ok) throw new Error(String(res.status));
+  return res.json();
+}
+
+export function setRunePage(id: number): Promise<void> {
+  return postJson("/api/rune-pages/current", { id });
+}
