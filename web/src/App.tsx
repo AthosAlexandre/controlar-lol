@@ -1,122 +1,114 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useEffect, useState } from "react";
+import { App as AntApp, Switch } from "antd";
+import {
+  getSummoner,
+  accept,
+  getAutoAccept,
+  setAutoAccept,
+  type Summoner,
+} from "./api";
+import "./App.css";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const { message } = AntApp.useApp();
+  const [summoner, setSummoner] = useState<Summoner | null>(null);
+  const [online, setOnline] = useState(false);
+  const [auto, setAuto] = useState(false);
+  const [accepting, setAccepting] = useState(false);
+
+  // Poll do status a cada 3s para refletir o LoL aberto/fechado.
+  useEffect(() => {
+    let alive = true;
+    async function poll() {
+      try {
+        const s = await getSummoner();
+        if (alive) {
+          setSummoner(s);
+          setOnline(true);
+        }
+      } catch {
+        if (alive) setOnline(false);
+      }
+    }
+    poll();
+    const id = setInterval(poll, 3000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
+
+  // Lê o estado do auto-aceitar ao montar.
+  useEffect(() => {
+    getAutoAccept()
+      .then(setAuto)
+      .catch(() => {});
+  }, []);
+
+  async function onAccept() {
+    setAccepting(true);
+    try {
+      await accept();
+      message.success("Partida aceita!");
+    } catch (err) {
+      message.error((err as Error).message || "Falha ao aceitar");
+    } finally {
+      setAccepting(false);
+    }
+  }
+
+  async function onToggle(value: boolean) {
+    try {
+      const now = await setAutoAccept(value);
+      setAuto(now);
+      message.info(now ? "Auto-aceitar ligado" : "Auto-aceitar desligado");
+    } catch {
+      message.error("Não foi possível mudar o auto-aceitar");
+    }
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <main className="stage">
+      <p className="eyebrow">Modo Banheiro</p>
+
+      <section className="panel" aria-live="polite">
+        <span className="corner tl" />
+        <span className="corner tr" />
+        <span className="corner bl" />
+        <span className="corner br" />
+
+        <div className={`status ${online ? "on" : "off"}`}>
+          <span className="dot" />
+          {online ? "Conectado" : "LoL fechado"}
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
+
+        <h1 className="nick">
+          {summoner ? summoner.name : "—"}
+          {summoner && <span className="tag">#{summoner.tagLine}</span>}
+        </h1>
+        <p className="level">
+          {summoner ? `Nível ${summoner.level}` : "Abra o cliente do LoL"}
+        </p>
+
         <button
+          className="accept"
           type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
+          onClick={onAccept}
+          disabled={!online || accepting}
         >
-          Count is {count}
+          {accepting ? "Aceitando…" : "Aceitar"}
         </button>
+
+        <div className="divider" />
+
+        <label className="auto">
+          <span className="auto-text">
+            <span className="auto-title">Auto-aceitar</span>
+            <span className="auto-sub">Aceita a partida sozinho</span>
+          </span>
+          <Switch checked={auto} onChange={onToggle} />
+        </label>
       </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+    </main>
+  );
 }
-
-export default App
