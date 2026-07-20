@@ -5,8 +5,12 @@ import {
   getChampSelect,
   hoverChampion,
   lockChampion,
+  banHover,
+  banChampion,
   getRunePages,
   setRunePage,
+  getRecommendedRunes,
+  applyRecommendedRunes,
   championIconUrl,
   getSummonerSpells,
   setSpells,
@@ -15,6 +19,7 @@ import {
   type RunePage,
   type TeamMember,
   type SummonerSpell,
+  type RecommendedRune,
 } from "./api";
 
 export function ChampSelectScreen() {
@@ -26,12 +31,23 @@ export function ChampSelectScreen() {
   const [completed, setCompleted] = useState(false);
   const [locking, setLocking] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isBanPhase, setIsBanPhase] = useState(false);
+  const [banned, setBanned] = useState(false);
 
   const [myTeam, setMyTeam] = useState<TeamMember[]>([]);
   const [theirTeam, setTheirTeam] = useState<TeamMember[]>([]);
   const [spells, setSpells2] = useState<{ spell1Id: number; spell2Id: number } | null>(null);
   const [spellList, setSpellList] = useState<SummonerSpell[]>([]);
   const [editingSlot, setEditingSlot] = useState<1 | 2 | null>(null);
+  const [recommended, setRecommended] = useState<RecommendedRune[]>([]);
+
+  async function loadRecommended() {
+    try {
+      setRecommended(await getRecommendedRunes());
+    } catch {
+      setRecommended([]);
+    }
+  }
 
   // Carrega campeões, páginas de runas e feitiços uma vez.
   useEffect(() => {
@@ -50,6 +66,12 @@ export function ChampSelectScreen() {
       .catch(() => {});
   }, []);
 
+  // Carrega as runas recomendadas quando o campeão selecionado muda (fora do ban).
+  useEffect(() => {
+    if (selected != null && !isBanPhase) void loadRecommended();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, isBanPhase]);
+
   // Poll leve do estado de pick + times + feitiços.
   useEffect(() => {
     let alive = true;
@@ -58,6 +80,8 @@ export function ChampSelectScreen() {
         const st = await getChampSelect();
         if (!alive) return;
         setCompleted(Boolean(st.completed));
+        setIsBanPhase(Boolean(st.isBanPhase));
+        setBanned(Boolean(st.ban?.completed));
         if (st.championId) setSelected((prev) => prev ?? st.championId!);
         setMyTeam(st.myTeam ?? []);
         setTheirTeam(st.theirTeam ?? []);
@@ -85,7 +109,21 @@ export function ChampSelectScreen() {
   async function onPick(champ: Champion) {
     setSelected(champ.id);
     try {
-      await hoverChampion(champ.id);
+      if (isBanPhase) {
+        await banHover(champ.id);
+      } else {
+        await hoverChampion(champ.id);
+        void loadRecommended(); // runas recomendadas do campeão que passei a escolher
+      }
+    } catch (err) {
+      message.error((err as Error).message);
+    }
+  }
+
+  async function onRecommended(r: RecommendedRune) {
+    try {
+      await applyRecommendedRunes(r);
+      message.success("Runa recomendada aplicada");
     } catch (err) {
       message.error((err as Error).message);
     }
@@ -97,6 +135,19 @@ export function ChampSelectScreen() {
     try {
       await lockChampion(selected);
       message.success("Campeão confirmado!");
+    } catch (err) {
+      message.error((err as Error).message);
+    } finally {
+      setLocking(false);
+    }
+  }
+
+  async function onBan() {
+    if (selected == null) return;
+    setLocking(true);
+    try {
+      await banChampion(selected);
+      message.success("Campeão banido!");
     } catch (err) {
       message.error((err as Error).message);
     } finally {
@@ -140,7 +191,9 @@ export function ChampSelectScreen() {
 
   return (
     <div className="cs">
-      <h1 className="headline">Seleção</h1>
+      <h1 className={`headline ${isBanPhase ? "ban" : ""}`}>
+        {isBanPhase ? "Banir campeão" : "Seleção"}
+      </h1>
 
       <div className="cs-teams">
         <TeamRow label="Seu time" members={myTeam} accent="ally" />
@@ -179,14 +232,25 @@ export function ChampSelectScreen() {
         ))}
       </div>
 
-      <button
-        className="accept cs-lock"
-        type="button"
-        onClick={onLock}
-        disabled={selected == null || completed || locking}
-      >
-        {completed ? "Confirmado" : locking ? "Confirmando…" : "Confirmar"}
-      </button>
+      {isBanPhase ? (
+        <button
+          className="accept cs-lock cs-ban"
+          type="button"
+          onClick={onBan}
+          disabled={selected == null || banned || locking}
+        >
+          {banned ? "Banido" : locking ? "Banindo…" : "Banir"}
+        </button>
+      ) : (
+        <button
+          className="accept cs-lock"
+          type="button"
+          onClick={onLock}
+          disabled={selected == null || completed || locking}
+        >
+          {completed ? "Confirmado" : locking ? "Confirmando…" : "Confirmar"}
+        </button>
+      )}
 
       {spells && spellList.length > 0 && (
         <div className="cs-spells">
@@ -219,9 +283,27 @@ export function ChampSelectScreen() {
         </div>
       )}
 
+      {!isBanPhase && recommended.length > 0 && (
+        <div className="cs-rec">
+          <p className="cs-runes-label">Runas recomendadas</p>
+          <div className="cs-runes">
+            {recommended.map((r, i) => (
+              <button
+                key={i}
+                type="button"
+                className="cs-page"
+                onClick={() => onRecommended(r)}
+              >
+                {r.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="divider" />
 
-      <p className="cs-runes-label">Runas</p>
+      <p className="cs-runes-label">Minhas runas</p>
       {pages.length === 0 ? (
         <p className="sub">Crie páginas de runas no PC</p>
       ) : (

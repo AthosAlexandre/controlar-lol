@@ -3,6 +3,7 @@ import { connectToLcu } from "../lcu/connect";
 import {
   getSession,
   findMyPickAction,
+  findMyBanAction,
   hoverChampion,
   lockChampion,
   getOwnedChampions,
@@ -13,6 +14,7 @@ import {
   setSummonerSpells,
   getSpellIconPath,
 } from "../lcu/summoner-spells";
+import { getRecommendedRunes, applyRecommendedRunes } from "../lcu/perks";
 
 export const champSelectRouter = Router();
 
@@ -53,9 +55,16 @@ champSelectRouter.get("/champion-icon/:id", async (req, res) => {
   }
 });
 
-/** Estado da seleção: pick + times + feitiços (ou vazio fora dela). */
+/** Estado da seleção: pick + times + feitiços + ban (ou vazio fora dela). */
 champSelectRouter.get("/champ-select", async (_req, res) => {
-  const empty = { canPick: false, myTeam: [], theirTeam: [], mySpells: null };
+  const empty = {
+    canPick: false,
+    myTeam: [],
+    theirTeam: [],
+    mySpells: null,
+    ban: null,
+    isBanPhase: false,
+  };
   const client = connectToLcu();
   if (!client) return res.json(empty);
   try {
@@ -95,6 +104,38 @@ champSelectRouter.post("/champ-select/lock", async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(502).json({ error: "Não foi possível confirmar o campeão", detail: lcuError(err) });
+  }
+});
+
+/** Seleciona (hover) um campeão para banir. */
+champSelectRouter.post("/champ-select/ban-hover", async (req, res) => {
+  const client = connectToLcu();
+  if (!client) return res.status(503).json({ error: "LoL não está aberto" });
+  try {
+    const ban = findMyBanAction(await getSession(client));
+    if (!ban) return res.status(409).json({ error: "Não é hora de banir" });
+    await hoverChampion(client, ban.actionId, Number(req.body?.championId));
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(502).json({ error: "Falha ao selecionar o ban", detail: lcuError(err) });
+  }
+});
+
+/** Bane (trava) o campeão selecionado. */
+champSelectRouter.post("/champ-select/ban", async (req, res) => {
+  const client = connectToLcu();
+  if (!client) return res.status(503).json({ error: "LoL não está aberto" });
+  try {
+    const ban = findMyBanAction(await getSession(client));
+    if (!ban) return res.status(409).json({ error: "Não é hora de banir" });
+    const championId = Number(req.body?.championId) || ban.championId;
+    if (!championId) {
+      return res.status(409).json({ error: "Escolha um campeão para banir" });
+    }
+    await lockChampion(client, ban.actionId, championId);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(502).json({ error: "Não foi possível banir", detail: lcuError(err) });
   }
 });
 
@@ -138,5 +179,47 @@ champSelectRouter.post("/champ-select/spells", async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(502).json({ error: "Não foi possível trocar o feitiço", detail: lcuError(err) });
+  }
+});
+
+/** Runas recomendadas do LoL para o campeão que você está escolhendo. */
+champSelectRouter.get("/recommended-runes", async (_req, res) => {
+  const client = connectToLcu();
+  if (!client) return res.json([]);
+  try {
+    const session = await getSession(client);
+    const pick = findMyPickAction(session);
+    if (!pick || !pick.championId) return res.json([]);
+    const s = session as {
+      localPlayerCellId?: number;
+      myTeam?: { cellId: number; assignedPosition: string }[];
+    };
+    const me = s.myTeam?.find((m) => m.cellId === s.localPlayerCellId);
+    res.json(await getRecommendedRunes(client, pick.championId, me?.assignedPosition || ""));
+  } catch {
+    // sem recomendadas (posição/campeão sem dados) → lista vazia, sem erro
+    res.json([]);
+  }
+});
+
+/** Aplica uma página de runas recomendada. */
+champSelectRouter.post("/recommended-runes/apply", async (req, res) => {
+  const client = connectToLcu();
+  if (!client) return res.status(503).json({ error: "LoL não está aberto" });
+  try {
+    const b = req.body ?? {};
+    const selectedPerkIds = Array.isArray(b.selectedPerkIds) ? b.selectedPerkIds.map(Number) : [];
+    if (selectedPerkIds.length === 0 || !b.primaryStyleId) {
+      return res.status(400).json({ error: "Runa recomendada inválida" });
+    }
+    await applyRecommendedRunes(client, {
+      name: String(b.name ?? "Recomendada"),
+      primaryStyleId: Number(b.primaryStyleId),
+      subStyleId: Number(b.subStyleId),
+      selectedPerkIds,
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(502).json({ error: "Não foi possível aplicar a runa recomendada", detail: lcuError(err) });
   }
 });

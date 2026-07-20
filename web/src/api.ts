@@ -84,6 +84,8 @@ export interface PickState {
   myTeam?: TeamMember[];
   theirTeam?: TeamMember[];
   mySpells?: { spell1Id: number; spell2Id: number } | null;
+  ban?: { actionId: number; championId: number; completed: boolean } | null;
+  isBanPhase?: boolean;
 }
 
 export interface SummonerSpell {
@@ -127,6 +129,14 @@ export function lockChampion(championId: number): Promise<void> {
   return postJson("/api/champ-select/lock", { championId });
 }
 
+export function banHover(championId: number): Promise<void> {
+  return postJson("/api/champ-select/ban-hover", { championId });
+}
+
+export function banChampion(championId: number): Promise<void> {
+  return postJson("/api/champ-select/ban", { championId });
+}
+
 export async function getRunePages(): Promise<RunePage[]> {
   const res = await fetch(`${baseUrl}/api/rune-pages`);
   if (!res.ok) throw new Error(String(res.status));
@@ -135,6 +145,23 @@ export async function getRunePages(): Promise<RunePage[]> {
 
 export function setRunePage(id: number): Promise<void> {
   return postJson("/api/rune-pages/current", { id });
+}
+
+export interface RecommendedRune {
+  name: string;
+  primaryStyleId: number;
+  subStyleId: number;
+  selectedPerkIds: number[];
+}
+
+export async function getRecommendedRunes(): Promise<RecommendedRune[]> {
+  const res = await fetch(`${baseUrl}/api/recommended-runes`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export function applyRecommendedRunes(rune: RecommendedRune): Promise<void> {
+  return postJson("/api/recommended-runes/apply", rune);
 }
 
 /** URL do ícone do feitiço (proxy no servidor). */
