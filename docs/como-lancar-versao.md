@@ -1,9 +1,10 @@
 # Como lançar uma versão nova (com auto-update)
 
-O app instalado se atualiza sozinho: ao abrir, ele checa as **Releases do GitHub**
-(repo público), baixa a versão nova em segundo plano e notifica o usuário para reiniciar.
-Isso funciona graças ao `electron-updater` (no `desktop/src/main.ts`) + o bloco `publish`
-no `electron-builder.yml`.
+O app instalado checa as **Releases do GitHub** (repo público) ao abrir e **pergunta** ao
+usuário antes de atualizar: "Nova versão X disponível. Deseja atualizar?" → baixa → "Baixado.
+Reiniciar agora?". Isso funciona graças ao `electron-updater` (no `desktop/src/main.ts`,
+função `setupAutoUpdate` com `autoDownload = false`) + o bloco `publish` no
+`electron-builder.yml`.
 
 ## Passo a passo para lançar
 
