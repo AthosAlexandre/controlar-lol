@@ -9,6 +9,8 @@ import {
   banChampion,
   getRunePages,
   setRunePage,
+  getRecommendedRunes,
+  applyRecommendedRunes,
   championIconUrl,
   getSummonerSpells,
   setSpells,
@@ -17,6 +19,7 @@ import {
   type RunePage,
   type TeamMember,
   type SummonerSpell,
+  type RecommendedRune,
 } from "./api";
 
 export function ChampSelectScreen() {
@@ -36,6 +39,15 @@ export function ChampSelectScreen() {
   const [spells, setSpells2] = useState<{ spell1Id: number; spell2Id: number } | null>(null);
   const [spellList, setSpellList] = useState<SummonerSpell[]>([]);
   const [editingSlot, setEditingSlot] = useState<1 | 2 | null>(null);
+  const [recommended, setRecommended] = useState<RecommendedRune[]>([]);
+
+  async function loadRecommended() {
+    try {
+      setRecommended(await getRecommendedRunes());
+    } catch {
+      setRecommended([]);
+    }
+  }
 
   // Carrega campeões, páginas de runas e feitiços uma vez.
   useEffect(() => {
@@ -53,6 +65,12 @@ export function ChampSelectScreen() {
       .then(setSpellList)
       .catch(() => {});
   }, []);
+
+  // Carrega as runas recomendadas quando o campeão selecionado muda (fora do ban).
+  useEffect(() => {
+    if (selected != null && !isBanPhase) void loadRecommended();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, isBanPhase]);
 
   // Poll leve do estado de pick + times + feitiços.
   useEffect(() => {
@@ -91,8 +109,21 @@ export function ChampSelectScreen() {
   async function onPick(champ: Champion) {
     setSelected(champ.id);
     try {
-      if (isBanPhase) await banHover(champ.id);
-      else await hoverChampion(champ.id);
+      if (isBanPhase) {
+        await banHover(champ.id);
+      } else {
+        await hoverChampion(champ.id);
+        void loadRecommended(); // runas recomendadas do campeão que passei a escolher
+      }
+    } catch (err) {
+      message.error((err as Error).message);
+    }
+  }
+
+  async function onRecommended(r: RecommendedRune) {
+    try {
+      await applyRecommendedRunes(r);
+      message.success("Runa recomendada aplicada");
     } catch (err) {
       message.error((err as Error).message);
     }
@@ -252,9 +283,27 @@ export function ChampSelectScreen() {
         </div>
       )}
 
+      {!isBanPhase && recommended.length > 0 && (
+        <div className="cs-rec">
+          <p className="cs-runes-label">Runas recomendadas</p>
+          <div className="cs-runes">
+            {recommended.map((r, i) => (
+              <button
+                key={i}
+                type="button"
+                className="cs-page"
+                onClick={() => onRecommended(r)}
+              >
+                {r.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="divider" />
 
-      <p className="cs-runes-label">Runas</p>
+      <p className="cs-runes-label">Minhas runas</p>
       {pages.length === 0 ? (
         <p className="sub">Crie páginas de runas no PC</p>
       ) : (

@@ -147,6 +147,23 @@ export function setRunePage(id: number): Promise<void> {
   return postJson("/api/rune-pages/current", { id });
 }
 
+export interface RecommendedRune {
+  name: string;
+  primaryStyleId: number;
+  subStyleId: number;
+  selectedPerkIds: number[];
+}
+
+export async function getRecommendedRunes(): Promise<RecommendedRune[]> {
+  const res = await fetch(`${baseUrl}/api/recommended-runes`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export function applyRecommendedRunes(rune: RecommendedRune): Promise<void> {
+  return postJson("/api/recommended-runes/apply", rune);
+}
+
 /** URL do ícone do feitiço (proxy no servidor). */
 export function spellIconUrl(id: number): string {
   return `${baseUrl}/api/spell-icon/${id}`;

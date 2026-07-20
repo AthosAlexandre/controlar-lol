@@ -14,6 +14,7 @@ import {
   setSummonerSpells,
   getSpellIconPath,
 } from "../lcu/summoner-spells";
+import { getRecommendedRunes, applyRecommendedRunes } from "../lcu/perks";
 
 export const champSelectRouter = Router();
 
@@ -178,5 +179,47 @@ champSelectRouter.post("/champ-select/spells", async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(502).json({ error: "Não foi possível trocar o feitiço", detail: lcuError(err) });
+  }
+});
+
+/** Runas recomendadas do LoL para o campeão que você está escolhendo. */
+champSelectRouter.get("/recommended-runes", async (_req, res) => {
+  const client = connectToLcu();
+  if (!client) return res.json([]);
+  try {
+    const session = await getSession(client);
+    const pick = findMyPickAction(session);
+    if (!pick || !pick.championId) return res.json([]);
+    const s = session as {
+      localPlayerCellId?: number;
+      myTeam?: { cellId: number; assignedPosition: string }[];
+    };
+    const me = s.myTeam?.find((m) => m.cellId === s.localPlayerCellId);
+    res.json(await getRecommendedRunes(client, pick.championId, me?.assignedPosition || ""));
+  } catch {
+    // sem recomendadas (posição/campeão sem dados) → lista vazia, sem erro
+    res.json([]);
+  }
+});
+
+/** Aplica uma página de runas recomendada. */
+champSelectRouter.post("/recommended-runes/apply", async (req, res) => {
+  const client = connectToLcu();
+  if (!client) return res.status(503).json({ error: "LoL não está aberto" });
+  try {
+    const b = req.body ?? {};
+    const selectedPerkIds = Array.isArray(b.selectedPerkIds) ? b.selectedPerkIds.map(Number) : [];
+    if (selectedPerkIds.length === 0 || !b.primaryStyleId) {
+      return res.status(400).json({ error: "Runa recomendada inválida" });
+    }
+    await applyRecommendedRunes(client, {
+      name: String(b.name ?? "Recomendada"),
+      primaryStyleId: Number(b.primaryStyleId),
+      subStyleId: Number(b.subStyleId),
+      selectedPerkIds,
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(502).json({ error: "Não foi possível aplicar a runa recomendada", detail: lcuError(err) });
   }
 });
