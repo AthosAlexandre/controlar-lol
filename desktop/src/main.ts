@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import path from "node:path";
 import QRCode from "qrcode";
+import { autoUpdater } from "electron-updater";
 import { SERVER_BUNDLE, WEB_DIST } from "./paths";
 
 const PORT = 3000;
@@ -50,7 +51,25 @@ ipcMain.handle("remote:disable", async () => {
 
 ipcMain.handle("lol:status", async () => backend().isLolRunning());
 
-app.whenReady().then(createWindow);
+/**
+ * Checa por atualizações nas Releases do GitHub (repo público) e baixa em
+ * segundo plano; quando pronto, o electron-updater notifica o usuário para
+ * reiniciar. Só roda no app empacotado — no dev não há update para checar.
+ */
+function checkForUpdates() {
+  if (!app.isPackaged) return;
+  autoUpdater.on("error", () => {
+    // sem internet / sem release / erro de rede: ignora, o app abre normal
+  });
+  autoUpdater.checkForUpdatesAndNotify().catch(() => {
+    // idem: falha de update nunca deve quebrar o app
+  });
+}
+
+app.whenReady().then(() => {
+  createWindow();
+  checkForUpdates();
+});
 
 app.on("window-all-closed", async () => {
   // Sem system tray: fechar a janela para o server e encerra o app.

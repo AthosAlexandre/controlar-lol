@@ -55,3 +55,18 @@ if (-not $setup) { throw "Instalador não foi gerado em desktop/release." }
 $mb = [math]::Round($setup.Length / 1MB, 1)
 Write-Host "==> Pronto! Instalador: $($setup.FullName) ($mb MB)" -ForegroundColor Green
 Write-Host "    Envie esse .exe pros amigos: dois cliques para instalar." -ForegroundColor Green
+
+# --- Auto-update: arquivos para a GitHub Release --------------------------------
+# Para o auto-update funcionar, publique estes 3 arquivos na Release (tag = versao):
+Write-Host ""
+Write-Host "==> Auto-update: suba estes arquivos na GitHub Release:" -ForegroundColor Cyan
+$rel = Join-Path $root "desktop\release"
+foreach ($name in @($setup.Name, "latest.yml", ($setup.Name + ".blockmap"))) {
+  $f = Join-Path $rel $name
+  if (Test-Path $f) {
+    Write-Host ("    - {0}" -f $f) -ForegroundColor Gray
+  } else {
+    Write-Host ("    - (faltando) {0}" -f $name) -ForegroundColor Yellow
+  }
+}
+Write-Host "    Bump a versao em desktop/package.json antes de buildar (ex.: 0.1.0 -> 0.1.1)." -ForegroundColor DarkGray

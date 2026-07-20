@@ -2,6 +2,12 @@ appId: com.multidrop.lolmodobanheiro
 productName: LoL Modo Banheiro
 directories:
   output: release
+# Auto-update via GitHub Releases (repo público). O build gera o latest.yml que o
+# electron-updater lê; publique .exe + latest.yml + .exe.blockmap na Release.
+publish:
+  provider: github
+  owner: AthosAlexandre
+  repo: controlar-lol
 files:
   - build/**/*
   - package.json
@@ -17,6 +23,9 @@ extraResources:
 win:
   target: nsis
   signAndEditExecutable: false
+# Nome do instalador SEM espaços, para bater exatamente com a url do latest.yml
+# (o auto-update por upload manual precisa que o nome do arquivo == url do manifesto).
+artifactName: LoL-Modo-Banheiro-Setup-${version}.${ext}
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
