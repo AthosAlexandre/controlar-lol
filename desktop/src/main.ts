@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, dialog } from "electron";
 import path from "node:path";
 import QRCode from "qrcode";
 import { autoUpdater } from "electron-updater";
@@ -52,23 +52,56 @@ ipcMain.handle("remote:disable", async () => {
 ipcMain.handle("lol:status", async () => backend().isLolRunning());
 
 /**
- * Checa por atualizações nas Releases do GitHub (repo público) e baixa em
- * segundo plano; quando pronto, o electron-updater notifica o usuário para
- * reiniciar. Só roda no app empacotado — no dev não há update para checar.
+ * Checa por atualizações nas Releases do GitHub (repo público) e PERGUNTA antes
+ * de baixar/instalar. Só roda no app empacotado — no dev não há update para checar.
+ * Fluxo: "Nova versão, deseja atualizar?" → baixa → "Baixado, reiniciar agora?".
  */
-function checkForUpdates() {
+function setupAutoUpdate() {
   if (!app.isPackaged) return;
-  autoUpdater.on("error", () => {
-    // sem internet / sem release / erro de rede: ignora, o app abre normal
+  autoUpdater.autoDownload = false; // não baixa sem o usuário aceitar
+
+  autoUpdater.on("update-available", async (info) => {
+    const { response } = await dialog.showMessageBox({
+      type: "info",
+      title: "Atualização disponível",
+      message: `Nova versão ${info.version} disponível.`,
+      detail: "Deseja baixar e atualizar agora?",
+      buttons: ["Atualizar", "Agora não"],
+      defaultId: 0,
+      cancelId: 1,
+    });
+    if (response === 0) {
+      autoUpdater.downloadUpdate().catch(() => {
+        // falha ao baixar (rede) — ignora, o app segue na versão atual
+      });
+    }
   });
-  autoUpdater.checkForUpdatesAndNotify().catch(() => {
-    // idem: falha de update nunca deve quebrar o app
+
+  autoUpdater.on("update-downloaded", async (info) => {
+    const { response } = await dialog.showMessageBox({
+      type: "info",
+      title: "Atualização pronta",
+      message: `Versão ${info.version} baixada.`,
+      detail: "Reiniciar agora para instalar?",
+      buttons: ["Reiniciar agora", "Depois"],
+      defaultId: 0,
+      cancelId: 1,
+    });
+    if (response === 0) autoUpdater.quitAndInstall();
+  });
+
+  autoUpdater.on("error", () => {
+    // sem internet / sem release / erro: ignora, o app abre normal
+  });
+
+  autoUpdater.checkForUpdates().catch(() => {
+    // falha de update nunca deve quebrar o app
   });
 }
 
 app.whenReady().then(() => {
   createWindow();
-  checkForUpdates();
+  setupAutoUpdate();
 });
 
 app.on("window-all-closed", async () => {
