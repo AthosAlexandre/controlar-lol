@@ -15,7 +15,7 @@ import {
   getSpellIconPath,
 } from "../lcu/summoner-spells";
 import { getRecommendedRunes, applyRecommendedRunes } from "../lcu/perks";
-import { getOwnedSkins, selectSkin } from "../lcu/skins";
+import { getOwnedSkins, selectSkin, getSkinTilePath } from "../lcu/skins";
 
 export const champSelectRouter = Router();
 
@@ -246,17 +246,14 @@ champSelectRouter.get("/skins", async (_req, res) => {
   }
 });
 
-/** Proxy da miniatura da skin (tile). championId = floor(skinId/1000). */
+/** Proxy da miniatura da skin — usa o tilePath que vem no carrossel. */
 champSelectRouter.get("/skin-icon/:id", async (req, res) => {
   const client = connectToLcu();
   if (!client) return res.status(503).end();
   try {
-    const skinId = Number(req.params.id);
-    const championId = Math.floor(skinId / 1000);
-    const { data } = await client.get(
-      `/lol-game-data/assets/v1/champion-tiles/${championId}/${skinId}.jpg`,
-      { responseType: "arraybuffer" }
-    );
+    const tilePath = await getSkinTilePath(client, Number(req.params.id));
+    if (!tilePath) return res.status(404).end();
+    const { data } = await client.get(tilePath, { responseType: "arraybuffer" });
     res.setHeader("Content-Type", "image/jpeg");
     res.setHeader("Cache-Control", "public, max-age=86400");
     res.end(Buffer.from(data as ArrayBuffer));

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import type { AxiosInstance } from "axios";
-import { getOwnedSkins, selectSkin } from "./skins";
+import { getOwnedSkins, selectSkin, getSkinTilePath } from "./skins";
 
 describe("getOwnedSkins", () => {
   it("devolve só as skins que o jogador possui e não estão desabilitadas", async () => {
@@ -20,6 +20,22 @@ describe("getOwnedSkins", () => {
       { id: 64010, name: "Lee Sin God Fist" },
     ]);
     expect(client.get).toHaveBeenCalledWith("/lol-champ-select/v1/skin-carousel-skins");
+  });
+});
+
+describe("getSkinTilePath", () => {
+  it("acha o tilePath da skin pelo id na lista", async () => {
+    const client = {
+      get: vi.fn().mockResolvedValue({
+        data: [
+          { id: 22000, name: "Ashe", tilePath: "/x/ashe_tile_0.jpg" },
+          { id: 22001, name: "Ashe Freljord", tilePath: "/x/ashe_tile_1.jpg" },
+        ],
+      }),
+    } as unknown as AxiosInstance;
+
+    expect(await getSkinTilePath(client, 22001)).toBe("/x/ashe_tile_1.jpg");
+    expect(await getSkinTilePath(client, 99999)).toBeNull();
   });
 });
 
