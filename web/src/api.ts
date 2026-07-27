@@ -88,6 +88,8 @@ export interface PickState {
   isBanPhase?: boolean;
   timer?: { timeLeftMs: number; totalMs: number; phase: string } | null;
   isPickPhase?: boolean;
+  bans?: number[];
+  unavailable?: number[];
 }
 
 export interface SummonerSpell {

@@ -117,7 +117,26 @@ describe("summarizeChampSelect", () => {
       isBanPhase: false,
       timer: null,
       isPickPhase: false,
+      bans: [],
+      unavailable: [],
     });
+  });
+
+  it("lista banidos e indisponíveis (banidos + picados completos)", () => {
+    const actionsSession = {
+      localPlayerCellId: 0,
+      actions: [
+        [{ id: 10, actorCellId: 1, championId: 17, completed: true, type: "ban" }],
+        [{ id: 11, actorCellId: 5, championId: 64, completed: true, type: "ban" }],
+        [{ id: 0, actorCellId: 2, championId: 103, completed: true, type: "pick" }],
+        [{ id: 1, actorCellId: 0, championId: 0, completed: false, type: "pick" }],
+      ],
+      myTeam: [],
+      theirTeam: [],
+    };
+    const s = summarizeChampSelect(actionsSession);
+    expect(s.bans).toEqual([17, 64]);
+    expect(s.unavailable).toEqual([17, 64, 103]);
   });
 
   it("extrai o timer da sessão", () => {

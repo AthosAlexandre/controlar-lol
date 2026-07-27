@@ -47,10 +47,14 @@ export function ChampSelectScreen() {
   const [recommended, setRecommended] = useState<RecommendedRune[]>([]);
   const [skins, setSkins] = useState<Skin[]>([]);
   const [selectedSkin, setSelectedSkin] = useState<number>(0);
+  const [bans, setBans] = useState<number[]>([]);
+  const [unavailable, setUnavailable] = useState<number[]>([]);
+  const [pickingChamp, setPickingChamp] = useState(true);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const timerRef = useRef<{ timeLeftMs: number; receivedAt: number } | null>(null);
   const prevSecRef = useRef<number | null>(null);
   const prevTurnRef = useRef(false);
+  const skinChampRef = useRef<number>(0); // campeão cujas skins já carregaram
 
   async function loadRecommended() {
     try {
@@ -77,17 +81,9 @@ export function ChampSelectScreen() {
       .catch(() => {});
   }, []);
 
-  // Carrega runas recomendadas e skins quando o campeão selecionado muda (fora do ban).
+  // Carrega as runas recomendadas quando o campeão selecionado muda (fora do ban).
   useEffect(() => {
-    if (selected != null && !isBanPhase) {
-      void loadRecommended();
-      getSkins()
-        .then((r) => {
-          setSkins(r.skins);
-          setSelectedSkin(r.selectedId);
-        })
-        .catch(() => {});
-    }
+    if (selected != null && !isBanPhase) void loadRecommended();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, isBanPhase]);
 
@@ -134,10 +130,29 @@ export function ChampSelectScreen() {
         const myTurn = Boolean(st.isPickPhase) || Boolean(st.isBanPhase);
         if (myTurn && !prevTurnRef.current) playTurn();
         prevTurnRef.current = myTurn;
-        if (st.championId) setSelected((prev) => prev ?? st.championId!);
+        if (st.championId) {
+          setSelected((prev) => prev ?? st.championId!);
+          setPickingChamp(false); // já tem campeão → esconde o grid
+        }
         setMyTeam(st.myTeam ?? []);
         setTheirTeam(st.theirTeam ?? []);
         setSpells2(st.mySpells ?? null);
+        setBans(st.bans ?? []);
+        setUnavailable(st.unavailable ?? []);
+        // Recarrega as skins quando o campeão muda; tenta de novo se vierem vazias.
+        if (!st.isBanPhase && st.championId && st.championId !== skinChampRef.current) {
+          try {
+            const r = await getSkins();
+            if (!alive) return;
+            if (r.skins.length > 0) {
+              setSkins(r.skins);
+              setSelectedSkin(r.selectedId);
+              skinChampRef.current = st.championId;
+            }
+          } catch {
+            /* tenta no próximo poll */
+          }
+        }
       } catch {
         /* ignora */
       }
@@ -165,7 +180,9 @@ export function ChampSelectScreen() {
         await banHover(champ.id);
       } else {
         await hoverChampion(champ.id);
-        void loadRecommended(); // runas recomendadas do campeão que passei a escolher
+        setPickingChamp(false); // escolheu → esconde o grid, mostra skins
+        skinChampRef.current = 0; // força recarregar as skins do novo campeão
+        void loadRecommended();
       }
     } catch (err) {
       message.error((err as Error).message);
@@ -266,37 +283,61 @@ export function ChampSelectScreen() {
         <TeamRow label="Inimigo" members={theirTeam} accent="enemy" />
       </div>
 
-      <Input
-        className="cs-search"
-        placeholder="Buscar campeão…"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        allowClear
-      />
+      {bans.length > 0 && (
+        <div className="cs-bans">
+          <span className="cs-team-label">Banidos</span>
+          <div className="cs-bans-row">
+            {bans.map((id, i) => (
+              <img key={i} className="cs-ban-icon" src={championIconUrl(id)} alt="" />
+            ))}
+          </div>
+        </div>
+      )}
 
-      <div className="cs-grid">
-        {filtered.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            className={`cs-champ ${selected === c.id ? "sel" : ""}`}
-            onClick={() => onPick(c)}
-            disabled={completed}
-            title={c.name}
-          >
-            <img
-              className="cs-icon"
-              src={championIconUrl(c.id)}
-              alt=""
-              loading="lazy"
-              onError={(e) => {
-                e.currentTarget.style.visibility = "hidden";
-              }}
-            />
-            <span className="cs-name">{c.name}</span>
+      {isBanPhase || pickingChamp ? (
+        <>
+          <Input
+            className="cs-search"
+            placeholder="Buscar campeão…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            allowClear
+          />
+
+          <div className="cs-grid">
+            {filtered.map((c) => {
+              const blocked = unavailable.includes(c.id);
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`cs-champ ${selected === c.id ? "sel" : ""} ${blocked ? "unavail" : ""}`}
+                  onClick={() => onPick(c)}
+                  disabled={completed || blocked}
+                  title={c.name}
+                >
+                  <img
+                    className="cs-icon"
+                    src={championIconUrl(c.id)}
+                    alt=""
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.style.visibility = "hidden";
+                    }}
+                  />
+                  <span className="cs-name">{c.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        !completed && (
+          <button type="button" className="cs-change" onClick={() => setPickingChamp(true)}>
+            Trocar campeão
           </button>
-        ))}
-      </div>
+        )
+      )}
 
       {isBanPhase ? (
         <button

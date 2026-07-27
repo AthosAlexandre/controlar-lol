@@ -130,6 +130,8 @@ export interface ChampSelectSummary {
   isBanPhase: boolean;
   timer: ChampTimer | null;
   isPickPhase: boolean;
+  bans: number[];
+  unavailable: number[];
 }
 
 interface RawMember {
@@ -187,6 +189,21 @@ export function summarizeChampSelect(session: unknown): ChampSelectSummary {
   const pickActive = findMyActionByType(session, "pick");
   const isPickPhase = Boolean(pickActive?.isInProgress && !pickActive.completed);
 
+  // Campeões banidos e indisponíveis (banidos + já escolhidos, ações completas).
+  const bans: number[] = [];
+  const unavailable: number[] = [];
+  const actions = (session as { actions?: ChampSelectAction[][] })?.actions;
+  if (Array.isArray(actions)) {
+    for (const group of actions) {
+      for (const a of group) {
+        if (a.completed && a.championId > 0) {
+          if (a.type === "ban") bans.push(a.championId);
+          unavailable.push(a.championId);
+        }
+      }
+    }
+  }
+
   const rawTimer = (session as {
     timer?: {
       adjustedTimeLeftInPhase?: number;
@@ -216,5 +233,7 @@ export function summarizeChampSelect(session: unknown): ChampSelectSummary {
     isBanPhase,
     timer,
     isPickPhase,
+    bans,
+    unavailable,
   };
 }

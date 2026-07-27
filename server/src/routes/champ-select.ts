@@ -67,6 +67,8 @@ champSelectRouter.get("/champ-select", async (_req, res) => {
     isBanPhase: false,
     timer: null,
     isPickPhase: false,
+    bans: [],
+    unavailable: [],
   };
   const client = connectToLcu();
   if (!client) return res.json(empty);
