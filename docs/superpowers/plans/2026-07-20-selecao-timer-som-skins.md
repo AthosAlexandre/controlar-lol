@@ -794,4 +794,3 @@ git commit -m "docs: timer + som + skins na Selecao"
   - Docs → Task 6. ✅
 - **Placeholders:** nenhum "TBD/TODO"; todo passo com código/comando (o probe tem script completo). ✅
 - **Consistência de tipos:** `ChampTimer` (T1) bate com o `timer` em `PickState` (T2); `Skin` (T3) igual em `skins.ts`, rotas (T4) e `api.ts` (T5); `selectSkin(client, skinId)` (T3) usado por `/skins/select` (T4) e `selectSkin(skinId)` no app (T5); `isPickPhase` (T1) consumido no disparo do som (T2). ✅
-```
