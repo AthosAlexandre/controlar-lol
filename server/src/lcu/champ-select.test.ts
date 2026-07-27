@@ -83,6 +83,7 @@ const fullSession = {
     { cellId: 5, championId: 157, championPickIntent: 99, assignedPosition: "middle" },
     { cellId: 6, championId: 0, championPickIntent: 0, assignedPosition: "" },
   ],
+  timer: { adjustedTimeLeftInPhase: 27000, totalTimeInPhase: 30000, phase: "BAN_PICK", isInfinite: false },
 };
 
 describe("summarizeChampSelect", () => {
@@ -114,7 +115,31 @@ describe("summarizeChampSelect", () => {
       mySpells: null,
       ban: null,
       isBanPhase: false,
+      timer: null,
+      isPickPhase: false,
     });
+  });
+
+  it("extrai o timer da sessão", () => {
+    expect(summarizeChampSelect(fullSession).timer).toEqual({
+      timeLeftMs: 27000,
+      totalMs: 30000,
+      phase: "BAN_PICK",
+    });
+  });
+
+  it("timer null quando isInfinite", () => {
+    const s = summarizeChampSelect({ ...fullSession, timer: { isInfinite: true } });
+    expect(s.timer).toBeNull();
+  });
+
+  it("isPickPhase true quando a minha ação de pick está em progresso", () => {
+    const withActivePick = {
+      ...fullSession,
+      actions: [[{ id: 0, actorCellId: 0, championId: 0, completed: false, type: "pick", isInProgress: true }]],
+    };
+    expect(summarizeChampSelect(withActivePick).isPickPhase).toBe(true);
+    expect(summarizeChampSelect(fullSession).isPickPhase).toBe(false);
   });
 
   it("fora da fase de ban, isBanPhase é false", () => {

@@ -112,6 +112,12 @@ export interface MySpells {
   spell2Id: number;
 }
 
+export interface ChampTimer {
+  timeLeftMs: number;
+  totalMs: number;
+  phase: string;
+}
+
 export interface ChampSelectSummary {
   canPick: boolean;
   actionId: number;
@@ -122,6 +128,8 @@ export interface ChampSelectSummary {
   mySpells: MySpells | null;
   ban: PickInfo | null;
   isBanPhase: boolean;
+  timer: ChampTimer | null;
+  isPickPhase: boolean;
 }
 
 interface RawMember {
@@ -176,6 +184,26 @@ export function summarizeChampSelect(session: unknown): ChampSelectSummary {
     : null;
   const isBanPhase = Boolean(banActive?.isInProgress && !banActive.completed);
 
+  const pickActive = findMyActionByType(session, "pick");
+  const isPickPhase = Boolean(pickActive?.isInProgress && !pickActive.completed);
+
+  const rawTimer = (session as {
+    timer?: {
+      adjustedTimeLeftInPhase?: number;
+      totalTimeInPhase?: number;
+      phase?: string;
+      isInfinite?: boolean;
+    };
+  })?.timer;
+  const timer: ChampTimer | null =
+    rawTimer && !rawTimer.isInfinite && typeof rawTimer.adjustedTimeLeftInPhase === "number"
+      ? {
+          timeLeftMs: rawTimer.adjustedTimeLeftInPhase,
+          totalMs: rawTimer.totalTimeInPhase ?? 0,
+          phase: rawTimer.phase ?? "",
+        }
+      : null;
+
   return {
     canPick: pick ? !pick.completed : false,
     actionId: pick?.actionId ?? 0,
@@ -186,5 +214,7 @@ export function summarizeChampSelect(session: unknown): ChampSelectSummary {
     mySpells,
     ban,
     isBanPhase,
+    timer,
+    isPickPhase,
   };
 }
