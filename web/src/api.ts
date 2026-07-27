@@ -86,6 +86,8 @@ export interface PickState {
   mySpells?: { spell1Id: number; spell2Id: number } | null;
   ban?: { actionId: number; championId: number; completed: boolean } | null;
   isBanPhase?: boolean;
+  timer?: { timeLeftMs: number; totalMs: number; phase: string } | null;
+  isPickPhase?: boolean;
 }
 
 export interface SummonerSpell {

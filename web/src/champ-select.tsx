@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { App as AntApp, Input, Spin } from "antd";
+import { unlockAudio, playTurn, playTick } from "./sound";
 import {
   getChampions,
   getChampSelect,
@@ -40,6 +41,10 @@ export function ChampSelectScreen() {
   const [spellList, setSpellList] = useState<SummonerSpell[]>([]);
   const [editingSlot, setEditingSlot] = useState<1 | 2 | null>(null);
   const [recommended, setRecommended] = useState<RecommendedRune[]>([]);
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const timerRef = useRef<{ timeLeftMs: number; receivedAt: number } | null>(null);
+  const prevSecRef = useRef<number | null>(null);
+  const prevTurnRef = useRef(false);
 
   async function loadRecommended() {
     try {
@@ -72,6 +77,30 @@ export function ChampSelectScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, isBanPhase]);
 
+  // Conta o timer localmente (suave) entre os polls e toca o tick nos 10s finais.
+  useEffect(() => {
+    const id = setInterval(() => {
+      const r = timerRef.current;
+      if (!r) {
+        setSecondsLeft(null);
+        prevSecRef.current = null;
+        return;
+      }
+      const left = Math.max(0, Math.ceil((r.timeLeftMs - (Date.now() - r.receivedAt)) / 1000));
+      setSecondsLeft(left);
+      if (left <= 10 && left > 0 && left !== prevSecRef.current) playTick(left);
+      prevSecRef.current = left;
+    }, 250);
+    return () => clearInterval(id);
+  }, []);
+
+  // Religa o áudio no primeiro toque do usuário (autoplay policy).
+  useEffect(() => {
+    const unlock = () => unlockAudio();
+    window.addEventListener("pointerdown", unlock, { once: true });
+    return () => window.removeEventListener("pointerdown", unlock);
+  }, []);
+
   // Poll leve do estado de pick + times + feitiços.
   useEffect(() => {
     let alive = true;
@@ -82,6 +111,15 @@ export function ChampSelectScreen() {
         setCompleted(Boolean(st.completed));
         setIsBanPhase(Boolean(st.isBanPhase));
         setBanned(Boolean(st.ban?.completed));
+        if (st.timer) {
+          timerRef.current = { timeLeftMs: st.timer.timeLeftMs, receivedAt: Date.now() };
+        } else {
+          timerRef.current = null;
+        }
+        // som "sua vez": pick OU ban entrou em progresso agora
+        const myTurn = Boolean(st.isPickPhase) || Boolean(st.isBanPhase);
+        if (myTurn && !prevTurnRef.current) playTurn();
+        prevTurnRef.current = myTurn;
         if (st.championId) setSelected((prev) => prev ?? st.championId!);
         setMyTeam(st.myTeam ?? []);
         setTheirTeam(st.theirTeam ?? []);
@@ -194,6 +232,10 @@ export function ChampSelectScreen() {
       <h1 className={`headline ${isBanPhase ? "ban" : ""}`}>
         {isBanPhase ? "Banir campeão" : "Seleção"}
       </h1>
+
+      {secondsLeft != null && (
+        <div className={`cs-timer ${secondsLeft <= 10 ? "urgent" : ""}`}>{secondsLeft}s</div>
+      )}
 
       <div className="cs-teams">
         <TeamRow label="Seu time" members={myTeam} accent="ally" />
