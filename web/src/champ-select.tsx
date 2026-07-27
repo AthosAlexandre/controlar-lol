@@ -16,11 +16,15 @@ import {
   getSummonerSpells,
   setSpells,
   spellIconUrl,
+  getSkins,
+  selectSkin,
+  skinIconUrl,
   type Champion,
   type RunePage,
   type TeamMember,
   type SummonerSpell,
   type RecommendedRune,
+  type Skin,
 } from "./api";
 
 export function ChampSelectScreen() {
@@ -41,6 +45,8 @@ export function ChampSelectScreen() {
   const [spellList, setSpellList] = useState<SummonerSpell[]>([]);
   const [editingSlot, setEditingSlot] = useState<1 | 2 | null>(null);
   const [recommended, setRecommended] = useState<RecommendedRune[]>([]);
+  const [skins, setSkins] = useState<Skin[]>([]);
+  const [selectedSkin, setSelectedSkin] = useState<number>(0);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const timerRef = useRef<{ timeLeftMs: number; receivedAt: number } | null>(null);
   const prevSecRef = useRef<number | null>(null);
@@ -71,9 +77,17 @@ export function ChampSelectScreen() {
       .catch(() => {});
   }, []);
 
-  // Carrega as runas recomendadas quando o campeão selecionado muda (fora do ban).
+  // Carrega runas recomendadas e skins quando o campeão selecionado muda (fora do ban).
   useEffect(() => {
-    if (selected != null && !isBanPhase) void loadRecommended();
+    if (selected != null && !isBanPhase) {
+      void loadRecommended();
+      getSkins()
+        .then((r) => {
+          setSkins(r.skins);
+          setSelectedSkin(r.selectedId);
+        })
+        .catch(() => {});
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, isBanPhase]);
 
@@ -162,6 +176,16 @@ export function ChampSelectScreen() {
     try {
       await applyRecommendedRunes(r);
       message.success("Runa recomendada aplicada");
+    } catch (err) {
+      message.error((err as Error).message);
+    }
+  }
+
+  async function onSkin(skin: Skin) {
+    setSelectedSkin(skin.id); // otimista
+    try {
+      await selectSkin(skin.id);
+      message.success("Skin trocada");
     } catch (err) {
       message.error((err as Error).message);
     }
@@ -322,6 +346,34 @@ export function ChampSelectScreen() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {!isBanPhase && skins.length > 1 && (
+        <div className="cs-skins">
+          <p className="cs-runes-label">Skins</p>
+          <div className="cs-skin-grid">
+            {skins.map((sk) => (
+              <button
+                key={sk.id}
+                type="button"
+                className={`cs-skin ${selectedSkin === sk.id ? "sel" : ""}`}
+                onClick={() => onSkin(sk)}
+                title={sk.name}
+              >
+                <img
+                  className="cs-skin-img"
+                  src={skinIconUrl(sk.id)}
+                  alt=""
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.style.visibility = "hidden";
+                  }}
+                />
+                <span className="cs-skin-name">{sk.name}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

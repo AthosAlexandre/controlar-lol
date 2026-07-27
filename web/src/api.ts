@@ -166,6 +166,25 @@ export function applyRecommendedRunes(rune: RecommendedRune): Promise<void> {
   return postJson("/api/recommended-runes/apply", rune);
 }
 
+export interface Skin {
+  id: number;
+  name: string;
+}
+
+export function skinIconUrl(id: number): string {
+  return `${baseUrl}/api/skin-icon/${id}`;
+}
+
+export async function getSkins(): Promise<{ skins: Skin[]; selectedId: number }> {
+  const res = await fetch(`${baseUrl}/api/skins`);
+  if (!res.ok) return { skins: [], selectedId: 0 };
+  return res.json();
+}
+
+export function selectSkin(skinId: number): Promise<void> {
+  return postJson("/api/skins/select", { skinId });
+}
+
 /** URL do ícone do feitiço (proxy no servidor). */
 export function spellIconUrl(id: number): string {
   return `${baseUrl}/api/spell-icon/${id}`;
