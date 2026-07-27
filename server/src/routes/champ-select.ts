@@ -15,6 +15,7 @@ import {
   getSpellIconPath,
 } from "../lcu/summoner-spells";
 import { getRecommendedRunes, applyRecommendedRunes } from "../lcu/perks";
+import { getOwnedSkins, selectSkin } from "../lcu/skins";
 
 export const champSelectRouter = Router();
 
@@ -223,5 +224,53 @@ champSelectRouter.post("/recommended-runes/apply", async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(502).json({ error: "Não foi possível aplicar a runa recomendada", detail: lcuError(err) });
+  }
+});
+
+/** Skins que você possui do campeão + a skin atual. */
+champSelectRouter.get("/skins", async (_req, res) => {
+  const client = connectToLcu();
+  if (!client) return res.json({ skins: [], selectedId: 0 });
+  try {
+    const session = await getSession(client);
+    const s = session as {
+      localPlayerCellId?: number;
+      myTeam?: { cellId: number; selectedSkinId?: number }[];
+    };
+    const me = s.myTeam?.find((m) => m.cellId === s.localPlayerCellId);
+    res.json({ skins: await getOwnedSkins(client), selectedId: me?.selectedSkinId ?? 0 });
+  } catch {
+    res.json({ skins: [], selectedId: 0 });
+  }
+});
+
+/** Proxy da miniatura da skin (tile). championId = floor(skinId/1000). */
+champSelectRouter.get("/skin-icon/:id", async (req, res) => {
+  const client = connectToLcu();
+  if (!client) return res.status(503).end();
+  try {
+    const skinId = Number(req.params.id);
+    const championId = Math.floor(skinId / 1000);
+    const { data } = await client.get(
+      `/lol-game-data/assets/v1/champion-tiles/${championId}/${skinId}.jpg`,
+      { responseType: "arraybuffer" }
+    );
+    res.setHeader("Content-Type", "image/jpeg");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.end(Buffer.from(data as ArrayBuffer));
+  } catch {
+    res.status(404).end();
+  }
+});
+
+/** Troca a skin do campeão. */
+champSelectRouter.post("/skins/select", async (req, res) => {
+  const client = connectToLcu();
+  if (!client) return res.status(503).json({ error: "LoL não está aberto" });
+  try {
+    await selectSkin(client, Number(req.body?.skinId));
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(502).json({ error: "Não foi possível trocar a skin", detail: lcuError(err) });
   }
 });
