@@ -49,9 +49,8 @@ export function ChampSelectScreen() {
   const [selectedSkin, setSelectedSkin] = useState<number>(0);
   const [bans, setBans] = useState<number[]>([]);
   const [unavailable, setUnavailable] = useState<number[]>([]);
-  const [pickingChamp, setPickingChamp] = useState(true);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
-  const timerRef = useRef<{ timeLeftMs: number; receivedAt: number } | null>(null);
+  const timerRef = useRef<{ endsAt: number; phase: string } | null>(null);
   const prevSecRef = useRef<number | null>(null);
   const prevTurnRef = useRef(false);
   const skinChampRef = useRef<number>(0); // campeão cujas skins já carregaram
@@ -96,7 +95,7 @@ export function ChampSelectScreen() {
         prevSecRef.current = null;
         return;
       }
-      const left = Math.max(0, Math.ceil((r.timeLeftMs - (Date.now() - r.receivedAt)) / 1000));
+      const left = Math.max(0, Math.ceil((r.endsAt - Date.now()) / 1000));
       setSecondsLeft(left);
       if (left <= 10 && left > 0 && left !== prevSecRef.current) playTick(left);
       prevSecRef.current = left;
@@ -122,7 +121,11 @@ export function ChampSelectScreen() {
         setIsBanPhase(Boolean(st.isBanPhase));
         setBanned(Boolean(st.ban?.completed));
         if (st.timer) {
-          timerRef.current = { timeLeftMs: st.timer.timeLeftMs, receivedAt: Date.now() };
+          // Ancora o fim UMA vez por fase; assim a contagem é suave (sem pular 20→19→20).
+          const prev = timerRef.current;
+          if (!prev || prev.phase !== st.timer.phase) {
+            timerRef.current = { endsAt: Date.now() + st.timer.timeLeftMs, phase: st.timer.phase };
+          }
         } else {
           timerRef.current = null;
         }
@@ -130,10 +133,7 @@ export function ChampSelectScreen() {
         const myTurn = Boolean(st.isPickPhase) || Boolean(st.isBanPhase);
         if (myTurn && !prevTurnRef.current) playTurn();
         prevTurnRef.current = myTurn;
-        if (st.championId) {
-          setSelected((prev) => prev ?? st.championId!);
-          setPickingChamp(false); // já tem campeão → esconde o grid
-        }
+        if (st.championId) setSelected((prev) => prev ?? st.championId!);
         setMyTeam(st.myTeam ?? []);
         setTheirTeam(st.theirTeam ?? []);
         setSpells2(st.mySpells ?? null);
@@ -180,7 +180,6 @@ export function ChampSelectScreen() {
         await banHover(champ.id);
       } else {
         await hoverChampion(champ.id);
-        setPickingChamp(false); // escolheu → esconde o grid, mostra skins
         skinChampRef.current = 0; // força recarregar as skins do novo campeão
         void loadRecommended();
       }
@@ -294,7 +293,7 @@ export function ChampSelectScreen() {
         </div>
       )}
 
-      {isBanPhase || pickingChamp ? (
+      {!completed && (
         <>
           <Input
             className="cs-search"
@@ -313,7 +312,7 @@ export function ChampSelectScreen() {
                   type="button"
                   className={`cs-champ ${selected === c.id ? "sel" : ""} ${blocked ? "unavail" : ""}`}
                   onClick={() => onPick(c)}
-                  disabled={completed || blocked}
+                  disabled={blocked}
                   title={c.name}
                 >
                   <img
@@ -331,12 +330,6 @@ export function ChampSelectScreen() {
             })}
           </div>
         </>
-      ) : (
-        !completed && (
-          <button type="button" className="cs-change" onClick={() => setPickingChamp(true)}>
-            Trocar campeão
-          </button>
-        )
       )}
 
       {isBanPhase ? (

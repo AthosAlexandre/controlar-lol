@@ -296,20 +296,6 @@
   border: 1px solid rgba(232, 64, 87, 0.6);
 }
 
-/* Botão "Trocar campeão" (quando o grid está escondido). */
-.cs-change {
-  align-self: center;
-  padding: 6px 16px;
-  background: transparent;
-  border: 1px solid var(--gold-dark);
-  color: var(--gold);
-  font-size: 13px;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-}
-.cs-change:hover {
-  border-color: var(--gold);
-}
 .cs-icon {
   width: 48px;
   height: 48px;
